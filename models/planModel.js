@@ -50,11 +50,32 @@ class Plan {
         return result;
     }
 
+    static async getAllRemarks() {
+        const [rows] = await pool.query(
+            `SELECT 
+                applicant_establishment, 
+                equipment_location, 
+                equipment, 
+                evaluated_by, 
+                remarks, 
+                evaluation_date 
+             FROM checklist_submissions 
+             WHERE evaluation_date IS NOT NULL 
+             ORDER BY evaluation_date DESC`
+        );
+        return rows;
+    }
+
     static async getById(id) {
     const [result] = await pool.query(
       `SELECT * FROM checklist_submissions WHERE id = ?`, 
       [id]
     );
+    return result;
+  }
+
+  static async getCount() {
+    const [result] = await pool.query(`SELECT COUNT(*) AS total FROM checklist_submissions`);
     return result;
   }
 }

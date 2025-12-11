@@ -99,20 +99,19 @@ document.addEventListener("DOMContentLoaded", async () => {
      3) RENDER TABLE + EDIT MODAL
   ----------------------------- */
   function renderTable() {
-    tableBody.innerHTML = "";
-    const start = (currentPage - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-    const pageData = filteredPlans.slice(start, end);
+  tableBody.innerHTML = "";
+  const start = (currentPage - 1) * rowsPerPage;
+  const end = start + rowsPerPage;
+  const pageData = filteredPlans.slice(start, end);
 
-    if (!pageData.length) {
-      tableBody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-gray-500">No plans found</td></tr>`;
-      currentPageEl.textContent = `0 / 0`;
-      prevBtn.disabled = nextBtn.disabled = true;
-      return;
-    }
+  if (!pageData.length) {
+  tableBody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-gray-500">No plans found</td></tr>`;
+  currentPageEl.textContent = `0 / 0`;
+  prevBtn.disabled = nextBtn.disabled = true;
+  return;
+  }
 
-    pageData.forEach((plan, index) => {
-    // Parse equipment robustly inside the loop
+  pageData.forEach((plan, index) => {
     const equipmentArray = [];
     if (plan.equipment) {
         if (Array.isArray(plan.equipment)) {
@@ -127,31 +126,29 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         }
     }
+
     const status = (plan.status || "").toLowerCase();
+    let badgeColor = "bg-gray-200 text-gray-800";
+    let icon = "fa-question-circle";
+    let statusLabel = "Unknown";
 
-      let badgeColor = "bg-gray-200 text-gray-800";
-      let icon = "fa-question-circle";
-      let statusLabel = "Unknown";
-
-      if (status === "pending") {
+    if (status === "pending") {
         badgeColor = "bg-yellow-100 text-yellow-800";
         icon = "fa-clock";
         statusLabel = "Pending";
-      } 
-      else if (status === "approved") {
+    } else if (status === "approved") {
         badgeColor = "bg-green-100 text-green-800";
         icon = "fa-check-circle";
         statusLabel = "Approved";
-      } 
-      else if (status === "rejected") {
+    } else if (status === "rejected") {
         badgeColor = "bg-red-100 text-red-800";
         icon = "fa-times-circle";
         statusLabel = "Rejected";
-      }
+    }
 
-      const row = document.createElement("tr");
-      row.classList.add("hover:bg-gray-50");
-      row.innerHTML = `
+    const row = document.createElement("tr");
+    row.classList.add("hover:bg-gray-50");
+    row.innerHTML = `
         <td class="px-4 py-2">${start + index + 1}</td>
         <td class="px-4 py-2">${plan.user_name || plan.applicant_name}</td>
         <td class="px-4 py-2">${plan.applicant_establishment}</td>
@@ -159,30 +156,30 @@ document.addEventListener("DOMContentLoaded", async () => {
         <td class="px-4 py-2">${plan.total_units}</td>
         <td class="px-4 py-2">${equipmentArray.length ? equipmentArray.join(", ") : "-"}</td>
         <td class="px-4 py-2">
-          <span class="px-3 py-1 rounded-full text-xs flex items-center gap-1 ${badgeColor}">
-            <i class="fas ${icon}"></i>
-            ${statusLabel}
-          </span>
+            <span class="px-3 py-1 rounded-full text-xs flex items-center gap-1 ${badgeColor}">
+                <i class="fas ${icon}"></i>
+                ${statusLabel}
+            </span>
         </td>
         <td class="px-4 py-2 flex items-center gap-3">
-          <!-- VIEW PDF -->
-          <button class="view-btn text-blue-600 hover:text-blue-800" title="View PDF">
-            <i class="fas fa-file-pdf text-xl"></i>
-          </button>
+            <!-- VIEW PDF -->
+            <button class="view-btn text-blue-600 hover:text-blue-800" title="View PDF">
+                <i class="fas fa-file-pdf text-xl"></i>
+            </button>
 
-          <!-- EDIT -->
-          <button class="edit-btn text-green-600 hover:text-green-800" title="Edit">
-            <i class="fas fa-edit text-xl"></i>
-          </button>
+            <!-- EDIT -->
+            <button class="edit-btn text-green-600 hover:text-green-800" title="Edit" ${plan.remarks ? "disabled" : ""}>
+                <i class="fas fa-edit text-xl"></i>
+            </button>
 
-          <!-- STATUS -->
-          <button class="statusUpdate-btn text-orange-500 hover:text-orange-700" title="Update Status">
-            <i class="fas fa-sync-alt text-xl"></i>
-          </button>
+            <!-- STATUS -->
+            <button class="statusUpdate-btn text-orange-500 hover:text-orange-700" title="Update Status" ${status === "approved" ? "disabled" : ""}>
+                <i class="fas fa-sync-alt text-xl"></i>
+            </button>
         </td>
-      `;
-      tableBody.appendChild(row);
-    });
+    `;
+    tableBody.appendChild(row);
+  });
   }
 
   /* -----------------------------
@@ -209,11 +206,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       const index = parseInt(row.children[0].textContent) - 1 + (currentPage - 1) * rowsPerPage;
       const plan = filteredPlans[index];
 
-      // Show simplified modal
+      // Show modal
       checklistModal.classList.remove("hidden");
       checklistModal.classList.add("flex");
 
-      // Inject simplified modal form (only Remarks, Evaluated by, Date)
       modalContent.innerHTML = `
         <form id="checklistForm" class="mt-6 space-y-6">
           <div>
@@ -236,20 +232,28 @@ document.addEventListener("DOMContentLoaded", async () => {
         </form>
       `;
 
-      // Pre-fill fields
       const form = modalContent.querySelector("form");
+      const submitBtn = form.querySelector("button[type='submit']");
+
+      // Pre-fill fields
       form.querySelector("[name='remarks']").value = plan.remarks || "";
       form.querySelector("[name='evaluated_by']").value = plan.evaluated_by || "";
       form.querySelector("[name='evaluation_date']").value = plan.evaluation_date || "";
+
+      // Disable modal submit if remarks already exist
+      if (plan.remarks) {
+        submitBtn.disabled = true;
+        submitBtn.classList.add("opacity-50", "cursor-not-allowed");
+      }
 
       closeChecklistModal.addEventListener("click", () => {
         checklistModal.classList.add("hidden");
         checklistModal.classList.remove("flex");
       });
 
-      // Optional: handle form submission
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
+        if (submitBtn.disabled) return; // safeguard
 
         const updatedData = {
           remarks: form.remarks.value,
@@ -267,7 +271,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
           if (!res.ok) throw new Error("Failed to update plan");
 
-          // SUCCESS ALERT
           Swal.fire({
             title: "Updated Successfully!",
             text: "The applicant record has been updated.",
@@ -281,8 +284,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         } catch (err) {
           console.error(err);
-
-          // ERROR ALERT
           Swal.fire({
             title: "Update Failed",
             text: "Unable to update the applicant. Please try again.",

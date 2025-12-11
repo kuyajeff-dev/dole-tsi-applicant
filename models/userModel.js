@@ -18,6 +18,14 @@ class userModel {
         const [rows] = await pool.query('SELECT * FROM users WHERE role = ?', [role]);
         return rows; // return all matching users
     }
+
+    static async countUser(role = 'user') {
+        const [rows] = await pool.query(
+            `SELECT COUNT(*) AS total FROM users WHERE role = ?`,
+            [role]
+        );
+        return rows; // rows[0].total will give the count
+    }
 }
 
 module.exports = userModel;

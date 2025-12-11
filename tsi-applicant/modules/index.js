@@ -60,7 +60,7 @@ function renderPlansPage() {
             <td class="px-4 py-2 text-sm"><span class="px-2 py-1 rounded-full ${statusColor} text-xs font-semibold">${plan.status || "N/A"}</span></td>
             <td class="px-4 py-2 text-sm">${plan.remarks || "N/A"}</td>
             <td class="px-4 py-2 text-sm">${plan.evaluated_by || "N/A"}</td>
-            <td class="px-4 py-2 text-sm">${formatDate(plan.evaluated_date)}</td>
+            <td class="px-4 py-2 text-sm">${formatDate(plan.evaluation_date)}</td>
         `;
         tableContainer.appendChild(tr);
 
@@ -76,7 +76,7 @@ function renderPlansPage() {
             <div class="flex justify-between mb-2"><span class="font-semibold">Status</span> <span class="${statusColor} px-2 py-1 rounded-full text-xs font-semibold">${plan.status || "N/A"}</span></div>
             <div class="flex justify-between mb-2"><span class="font-semibold">Remarks</span> <span>${plan.remarks || "N/A"}</span></div>
             <div class="flex justify-between mb-2"><span class="font-semibold">Evaluated By</span> <span>${plan.evaluated_by || "N/A"}</span></div>
-            <div class="flex justify-between mb-2"><span class="font-semibold">Date</span> <span>${formatDate(plan.evaluated_date)}</span></div>
+            <div class="flex justify-between mb-2"><span class="font-semibold">Date</span> <span>${formatDate(plan.evaluation_date)}</span></div>
         `;
         mobileContainer.appendChild(card);
     });

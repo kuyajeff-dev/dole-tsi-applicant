@@ -71,6 +71,7 @@ app.use('/', require('./routes/checklistRoutes')); // your other APIs
 app.use('/api/user', require('./routes/userSessionRoutes'));
 app.use('/api/users', require('./routes/fetchRoutes'));
 app.use('/api/plans', require('./routes/planRoutes'));
+app.use('/api/dashboard', require('./routes/adminDashboardRoutes'));
 
 
 

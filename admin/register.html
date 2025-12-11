@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Register Panel</title>
+    <link rel="shortcut icon" href="/tsi-applicant/public/images/image(1).png" type="image/x-icon">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="w-full max-w-md p-8 bg-white shadow-2xl rounded-2xl">
+        <h2 class="text-2xl font-bold text-center mb-6 text-gray-700">Admin Registration</h2>
+
+        <form id="AdminRegister" class="space-y-5">
+            <div>
+                <label class="block text-gray-600 mb-1">Avatar</label>
+                <input type="file" name="avatar" id="avatar" accept="image/*" required class="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:outline-none bg-white">
+            </div>
+            <div>
+                <label class="block text-gray-600 mb-1">Full Name</label>
+                <input type="text" name="full_name" id="name" required class="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:outline-none" placeholder="Enter full name">
+            </div>
+
+            <div>
+                <label class="block text-gray-600 mb-1">Email</label>
+                <input type="email" name="email" id="email" required class="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:outline-none" placeholder="Enter email">
+            </div>
+
+            <div>
+                <label class="block text-gray-600 mb-1">Password</label>
+                <input type="password" name="password" id="password" required class="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:outline-none" placeholder="Enter password">
+            </div>
+
+            <div>
+                <label class="block text-gray-600 mb-1">Confirm Password</label>
+                <input type="password" name="confirm_password" id="confirmPassword" required class="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:outline-none" placeholder="Confirm password">
+            </div>
+
+            <button type="submit" class="w-full bg-green-600 text-white p-3 rounded-lg font-semibold hover:bg-green-700 transition duration-300">Register</button>
+
+            <div id="registerMessage" class="text-sm mt-2"></div>
+        </form>
+
+        <p class="text-center text-gray-500 text-sm mt-5">&copy; 2025 Admin Panel</p>
+    </div>
+
+    <script src="./modules/adminReg.js" defer></script>
+</body>
+</html>

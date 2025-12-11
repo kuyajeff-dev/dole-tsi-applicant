@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>View Mechanical Plan Checklist</title>
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- FIX: Make print button clickable & hide during print -->
+<style>
+@media print {
+  #printBtn {
+    display: none !important;
+  }
+}
+</style>
+</head>
+
+<body class="bg-gray-100 font-sans relative">
+
+<div class="p-6">
+
+  <!-- Main Form -->
+  <div class="bg-white p-10 max-w-4xl mx-auto shadow-lg mt-6">
+
+    <!-- HEADER LOGOS -->
+    <div class="flex items-center justify-between mb-6 gap-x-2">
+        <img src="/tsi-applicant/public/images/logo1.jpg" class="h-16" alt="Logo 1">
+        <img src="/tsi-applicant/public/images/logo2.jfif" class="h-16" alt="Logo 2">
+        <div class="text-center">
+            <h2 class="font-bold uppercase text-lg">Republic of the Philippines</h2>
+            <h3 class="uppercase font-semibold">Department of Labor and Employment</h3>
+            <p class="text-sm">Regional Office No. VII</p>
+        </div>
+        <img src="/tsi-applicant/public/images/image.png" class="h-16" alt="Logo 3">
+        <img src="/tsi-applicant/public/images/image(1).png" class="h-16" alt="Logo 4">
+    </div>
+
+    <div class="text-center">
+      <h2 class="mt-4 text-xl font-bold">Checklist for Application of Clearing Mechanical Plan Installation/s</h2>
+      <p class="text-sm italic mt-2">Checklist of requirements effective March 01, 2017.</p>
+    </div>
+
+    <!-- FORM -->
+    <form id="checklistForm" class="mt-6 space-y-6">
+
+      <div class="space-y-3">
+        <div class="flex items-center gap-4">
+            <label class="font-semibold w-56">Applicant Establishment:</label>
+            <input type="text" id="applicant_establishment" class="border-b flex-1 outline-none" readonly>
+        </div>
+        <div class="flex items-center gap-4">
+            <label class="font-semibold w-56">Location of Equipment:</label>
+            <input type="text" id="equipment_location" class="border-b flex-1 outline-none" readonly>
+        </div>
+        <div class="flex items-center gap-4">
+            <label class="font-semibold w-56">Total # of units:</label>
+            <input type="number" id="total_units" class="border-b w-24 outline-none" readonly>
+        </div>
+      </div>
+
+      <!-- Equipment Checkboxes -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-6 text-sm">
+        <label class="flex items-center gap-2"><input type="checkbox" value="Boiler" class="equipmentCheckbox accent-blue-500" disabled> Boiler</label>
+        <label class="flex items-center gap-2"><input type="checkbox" value="Pressure vessel" class="equipmentCheckbox accent-blue-500" disabled> Pressure vessel</label>
+        <label class="flex items-center gap-2"><input type="checkbox" value="Internal combustion engine" class="equipmentCheckbox accent-blue-500" disabled> Internal combustion engine</label>
+        <label class="flex items-center gap-2"><input type="checkbox" value="Power piping line" class="equipmentCheckbox accent-blue-500" disabled> Power piping line</label>
+        <label class="flex items-center gap-2"><input type="checkbox" value="Crane & hoist equipment" class="equipmentCheckbox accent-blue-500" disabled> Crane & hoist equipment</label>
+        <label class="flex items-center gap-2"><input type="checkbox" value="Elevator/manlift/dumbwaiter" class="equipmentCheckbox accent-blue-500" disabled> Elevator/manlift/dumbwaiter</label>
+        <label class="flex items-center gap-2"><input type="checkbox" value="Steam/gas/hydro/wind turbine" class="equipmentCheckbox accent-blue-500" disabled> Steam/gas/hydro/wind turbine</label>
+      </div>
+
+      <!-- Checklist Items -->
+      <div id="checklistItemsContainer" class="mt-6 space-y-4 text-sm"></div>
+
+      <!-- Remarks -->
+      <div>
+        <label class="font-semibold">REMARKS:</label>
+        <textarea id="remarks" class="w-full mt-2 border p-2 h-20" readonly></textarea>
+      </div>
+
+      <div class="flex justify-between mt-4 gap-4">
+        <div>
+          <label class="font-semibold">Evaluated by:</label>
+          <input type="text" id="evaluated_by" class="border-b w-64 outline-none mt-1" readonly>
+        </div>
+        <div>
+          <label class="font-semibold">Date of Evaluation:</label>
+          <input type="date" id="evaluation_date" class="border-b w-52 outline-none mt-1" readonly>
+        </div>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<!-- PRINT BUTTON — FIXED + ALWAYS CLICKABLE -->
+<button id="printBtn" 
+  class="fixed bottom-6 right-6 bg-blue-700 text-white px-6 py-3 rounded-full shadow-lg hover:bg-blue-800 z-50">
+  Print
+</button>
+
+<script>
+const checklistTexts = [
+  'Request Letter for "clearing of mechanical plans" addressed to Regional Director with contact name & contact number',
+  'Three (3) sets of duly accomplished Application Forms per equipment, signed/sealed by PME and signed by Owner/Manager',
+  'Three (3) sets of Plans/drawings incorporated in the Application Form (A3 size acceptable if legible)',
+  'Location / Site plans / Vicinity Map',
+  'Room layout / Floor plans / Equipment specifications',
+  'Installation drawings of equipment showing detailed sections / elevations / foundation construction',
+  'Foundation design calculation with minimum factor of safety of 5 (Boiler, Pressure Vessel, Turbine, ICE)',
+  'Mechanical plans/drawings, signed/sealed by PME and signed by Owner/Manager',
+  'Photocopy of PME\'s valid PRC ID',
+  'Photocopy of PME\'s recent Professional Tax Receipt',
+  'Photocopy of PME\'s valid Certificate of Appearance (CA) issued from DOLE',
+  'One (1) electronic copy of mechanical application in a portable document format (PDF) - if applicable'
+];
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const planId = new URLSearchParams(window.location.search).get("id");
+  if (!planId) return alert("No plan ID provided");
+
+  try {
+    const res = await fetch(`/api/plans/${planId}`);
+    const plan = await res.json();
+
+    document.getElementById("applicant_establishment").value = plan.applicant_establishment || "";
+    document.getElementById("equipment_location").value = plan.equipment_location || "";
+    document.getElementById("total_units").value = plan.total_units || "";
+    document.getElementById("remarks").value = plan.remarks || "";
+    document.getElementById("evaluated_by").value = plan.evaluated_by || "";
+    document.getElementById("evaluation_date").value = plan.evaluation_date?.split("T")[0] || "";
+
+    let equipmentArray = [];
+    try { equipmentArray = JSON.parse(plan.equipment); }
+    catch { equipmentArray = (plan.equipment || "").split(","); }
+
+    document.querySelectorAll(".equipmentCheckbox").forEach(cb => {
+      if (equipmentArray.includes(cb.value)) cb.checked = true;
+    });
+
+    const checklist = document.getElementById("checklistItemsContainer");
+    let checkedItems = [];
+
+    try { checkedItems = JSON.parse(plan.checklist_items).map(i => i.item); }
+    catch { checkedItems = []; }
+
+    checklist.innerHTML = checklistTexts.map(text => `
+      <div class="flex items-center gap-2">
+        <input type="checkbox" disabled ${checkedItems.includes(text) ? "checked" : ""}>
+        ${text}
+      </div>
+    `).join("");
+
+  } catch (e) {
+    alert("Failed to load plan");
+  }
+
+  // PRINT BUTTON FIXED
+  document.getElementById("printBtn").onclick = () => window.print();
+});
+</script>
+
+</body>
+</html>

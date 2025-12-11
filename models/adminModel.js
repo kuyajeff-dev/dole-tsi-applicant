@@ -1,0 +1,19 @@
+// models/adminModel.js
+const pool = require('../db/mysql');
+
+class adminModel {
+    static async findByEmail(email) {
+        const [rows] = await pool.query('SELECT * FROM users WHERE email = ? LIMIT 1', [email]);
+        return rows[0];
+    }
+
+    static async create({ full_name, email, password, avatar }) {
+        const [result] = await pool.query(
+            'INSERT INTO users (full_name, email, password, avatar, role, status) VALUES (?, ?, ?, ?, ?, ?)',
+            [full_name, email, password, avatar, 'admin', 'active']
+        );
+        return { id: result.insertId, full_name, email, avatar, role: 'admin', status: 'active' };
+    }
+}
+
+module.exports = adminModel;

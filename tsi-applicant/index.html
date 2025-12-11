@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WELCOME TO TSI</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js for interactivity -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="h-screen bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100 flex items-center justify-center">
+
+    <div class="bg-white p-10 rounded-2xl shadow-xl text-center relative" x-data="{ faqModal: false }">
+        <h1 class="text-5xl font-extrabold text-gray-800 mb-6 animate-bounce">WELCOME TO TSI</h1>
+        <p class="text-gray-600 mb-8">Your portal for a seamless experience.</p>
+        
+        <!-- Buttons with floating animation -->
+        <div class="flex justify-center gap-4">
+            <button @click="faqModal = true" class="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition transform motion-safe:animate-bounce">
+                FAQ
+            </button>
+            <a href="register" class="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition transform motion-safe:animate-bounce">
+                Register
+            </a>
+            <a href="login" class="px-6 py-3 bg-gray-800 text-white rounded-xl hover:bg-gray-900 transition transform motion-safe:animate-bounce">
+                Login
+            </a>
+        </div>
+
+        <!-- FAQ Modal -->
+        <div x-show="faqModal" 
+             class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" 
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0">
+            
+            <div @click.away="faqModal = false" class="bg-white p-8 rounded-2xl shadow-xl w-96 max-h-[80vh] overflow-y-auto">
+                <h2 class="text-3xl font-bold mb-6">Frequently Asked Questions</h2>
+                
+                <!-- Accordion using Alpine.js -->
+                <div class="space-y-4" x-data="{ openIndex: null }">
+                    <!-- FAQ Item 1 -->
+                    <div>
+                        <button @click="openIndex === 1 ? openIndex = null : openIndex = 1" class="w-full text-left px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 flex justify-between items-center">
+                            What is TSI?
+                            <span x-text="openIndex === 1 ? '-' : '+'"></span>
+                        </button>
+                        <div x-show="openIndex === 1" x-transition class="mt-2 px-4 text-gray-600">
+                            TSI is your seamless portal for accessing services and information easily.
+                        </div>
+                    </div>
+
+                    <!-- FAQ Item 2 -->
+                    <div>
+                        <button @click="openIndex === 2 ? openIndex = null : openIndex = 2" class="w-full text-left px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 flex justify-between items-center">
+                            How do I register?
+                            <span x-text="openIndex === 2 ? '-' : '+'"></span>
+                        </button>
+                        <div x-show="openIndex === 2" x-transition class="mt-2 px-4 text-gray-600">
+                            Click the Register button and fill out the registration form with your details.
+                        </div>
+                    </div>
+
+                    <!-- FAQ Item 3 -->
+                    <div>
+                        <button @click="openIndex === 3 ? openIndex = null : openIndex = 3" class="w-full text-left px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 flex justify-between items-center">
+                            How do I login?
+                            <span x-text="openIndex === 3 ? '-' : '+'"></span>
+                        </button>
+                        <div x-show="openIndex === 3" x-transition class="mt-2 px-4 text-gray-600">
+                            Use your registered email and password to login through the Login button.
+                        </div>
+                    </div>
+
+                    <!-- Add more FAQ items as needed -->
+                </div>
+
+                <button @click="faqModal = false" class="mt-6 w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
+                    Close
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Management</title>
+  <link rel="shortcut icon" href="/tsi-applicant/public/images/image(1).png" type="image/x-icon">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+<div class="flex h-screen">
+
+  <!-- SIDEBAR -->
+  <aside class="w-64 bg-blue-500 shadow-md min-h-screen hidden md:block">
+    <div class="p-6">
+      <h2 class="font-bold text-xl mb-4 text-white">Admin Menu</h2>
+      <ul>
+        <li class="mb-3">
+          <a href="/admin/pages/index" class="block py-2 px-3 rounded hover:bg-blue-100 text-white">Dashboard</a>
+        </li>
+        <li class="mb-3">
+          <a href="/admin/pages/userManagement" class="block py-2 px-3 rounded bg-blue-600 text-white">Manage Users</a>
+        </li>
+        <li class="mb-3">
+          <button id="applicantToggle" class="w-full flex justify-between items-center py-2 px-3 rounded hover:bg-blue-100 font-semibold text-white">
+            Applicant
+            <svg class="w-4 h-4 transition-transform duration-200" id="arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <ul id="applicantSubmenu" class="ml-2 mt-2 space-y-1 hidden">
+            <li><a href="/admin/pages/listApplicant" class="block py-1 px-3 rounded hover:bg-blue-50">List of Applicants</a></li>
+            <li><a href="/admin/pages/listApprove" class="block py-1 px-3 rounded hover:bg-blue-50">Approval Applicant</a></li>
+          </ul>
+        </li>
+        <li>
+          <a href="/admin/pages/monthlyRecords" class="block py-2 px-3 rounded hover:bg-blue-100 text-white">Monthly Records</a>
+        </li>
+      </ul>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <div class="flex-1 flex flex-col">
+
+  <!-- Top Navbar -->
+  <header class="bg-white shadow px-4 py-4 flex justify-between items-center">
+    <h1 class="text-xl font-bold text-gray-800">User Management</h1>
+
+    <div class="flex items-center space-x-4">
+
+      <!-- User Dropdown -->
+      <div class="relative group">
+        <button class="flex items-center space-x-2 hover:bg-gray-100 px-3 py-2 rounded">
+          <span id="navUserName" class="text-gray-800">Admin</span>
+          <img id="navAvatar" src="/uploads/default-avatar.png" class="w-8 h-8 rounded-full border-2 border-gray-300" alt="avatar">
+        </button>
+
+        <div class="absolute right-0 mt-2 w-40 bg-white text-black rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+          <a href="#" class="block px-4 py-2 hover:bg-gray-100">Profile</a>
+          <a href="/admin/logout" class="block px-4 py-2 hover:bg-gray-100 text-red-600">Logout</a>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+    <!-- CONTENT AREA -->
+    <main class="p-6 flex-1 overflow-y-auto">
+
+      <!-- Header Row -->
+      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-3">
+        <h2 class="text-2xl font-bold text-gray-700">Manage Users</h2>
+
+        <div class="flex items-center space-x-3">
+          <input type="text" id="searchUsers" placeholder="Search user..." class="w-full sm:w-60 p-2 border rounded shadow-sm">
+        </div>
+      </div>
+
+      <!-- Users Table -->
+      <div class="bg-white rounded-xl shadow p-4">
+        <div class="overflow-x-auto">
+          <table class="min-w-full border border-gray-200 rounded">
+            <thead class="bg-gray-100">
+              <tr>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Avatar</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Name</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Email</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Role</th>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
+              </tr>
+            </thead>
+
+            <tbody id="userTableBody" class="divide-y divide-gray-200">
+
+              <!-- Example Row -->
+              <tr>
+                <td class="px-4 py-3">
+                  <img 
+                    src="/uploads/default-avatar.png" 
+                    class="w-10 h-10 rounded-lg border border-gray-300 shadow-sm object-cover"
+                    alt="avatar"
+                  >
+                </td>
+
+                <td class="px-4 py-3">Juan Dela Cruz</td>
+                <td class="px-4 py-3">juan@example.com</td>
+
+                <td class="px-4 py-3">
+                  <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">User</span>
+                </td>
+
+                <td class="px-4 py-3">
+                  <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs">Active</span>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="flex justify-between items-center mt-4">
+          <button id="prevPage" class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Prev</button>
+          <span id="currentPage" class="text-sm font-semibold">1 / 1</span>
+          <button id="nextPage" class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Next</button>
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+</div>
+
+<script type="module" src="../modules/usermanagement.js"></script>
+
+</body>
+</html>

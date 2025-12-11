@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DOLE Mechanical Plan</title>
+<link rel="shortcut icon" href="../public/images/image(1).png" type="image/x-icon">
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+<!-- NAVBAR -->
+<nav class="bg-blue-700 text-white shadow-lg">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between h-16 items-center">
+      <div class="flex-shrink-0 font-bold text-lg">
+        DOLE - Mechanical Plans
+      </div>
+
+      <!-- Desktop Menu -->
+      <div class="hidden md:flex items-center space-x-4">
+        <a href="/tsi-applicant/pages/index" class="hover:bg-blue-800 px-3 py-2 rounded">Home</a>
+        <a href="/tsi-applicant/pages/form" class="hover:bg-blue-800 px-3 py-2 rounded">Checklist</a>
+        <a href="/tsi-applicant/pages/contact" class="hover:bg-blue-800 px-3 py-2 rounded">Contact</a>
+
+        <!-- User Dropdown -->
+        <div class="relative group">
+          <button class="flex items-center space-x-2 hover:bg-blue-800 px-3 py-2 rounded">
+            <span id="navUserName"></span>
+            <img id="navAvatar" src="" class="w-8 h-8 rounded-full border-2 border-white" alt="avatar">
+          </button>
+          <div class="absolute right-0 mt-2 w-40 bg-white text-black rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+            <a href="#" class="block px-4 py-2 hover:bg-gray-100">Profile</a>
+            <a href="/tsi-applicant/logout" class="block px-4 py-2 hover:bg-gray-100 text-red-600">Logout</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Menu Button -->
+      <div class="md:hidden flex items-center">
+        <button id="mobileMenuButton" class="focus:outline-none">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Menu -->
+  <div id="mobileMenu" class="md:hidden hidden bg-blue-700 text-white">
+    <a href="/pages/index" class="block px-4 py-2 hover:bg-blue-800">Home</a>
+    <a href="/pages/form" class="block px-4 py-2 hover:bg-blue-800">Checklist</a>
+    <a href="/pages/contact" class="block px-4 py-2 hover:bg-blue-800">Contact</a>
+    <a href="/tsi-applicant/logout" class="block px-4 py-2 hover:bg-blue-800 text-red-300">Logout</a>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main class="max-w-7xl mx-auto p-4 sm:p-6">
+  <div id="app">
+
+    <!-- Welcome Section -->
+    <div class="mb-6">
+      <h1 id="welcomeTitle" class="text-2xl sm:text-3xl font-bold">Welcome!</h1>
+      <p class="text-gray-600 mt-1">Here's an overview of your mechanical plans.</p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+      <div class="bg-white p-6 rounded shadow hover:shadow-lg transition">
+        <h2 class="text-gray-500 text-sm font-semibold">Total Plans</h2>
+        <p id="countPlans" class="text-2xl font-bold mt-2">0</p>
+      </div>
+      <div class="bg-white p-6 rounded shadow hover:shadow-lg transition">
+        <h2 class="text-gray-500 text-sm font-semibold">Pending Approval</h2>
+        <p id="countPending" class="text-2xl font-bold mt-2">0</p>
+      </div>
+      <div class="bg-white p-6 rounded shadow hover:shadow-lg transition">
+        <h2 class="text-gray-500 text-sm font-semibold">Completed</h2>
+        <p id="countCompleted" class="text-2xl font-bold mt-2">0</p>
+      </div>
+    </div>
+
+    <!-- Search & Table Container -->
+    <div class="bg-white rounded shadow p-4 sm:p-6 mb-6">
+
+      <!-- Search Bar -->
+      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
+        <h2 class="font-bold text-lg">My Mechanical Plans</h2>
+        <input 
+          type="text" 
+          id="searchPlans" 
+          placeholder="Search plans..." 
+          class="w-full sm:w-64 p-2 border rounded"
+        />
+      </div>
+
+      <!-- Table for Desktop -->
+      <div class="hidden md:block overflow-x-auto">
+        <table class="min-w-full border border-gray-200 rounded">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700">#</th>
+              <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Applicant Establishment</th>
+              <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Equipment Location</th>
+              <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Total Units</th>
+              <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Equipment</th>
+              <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Status</th>
+              <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Remarks</th>
+              <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Evaluated By</th>
+              <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Date</th>
+            </tr>
+          </thead>
+          <tbody id="plansCardContainerTable"></tbody>
+        </table>
+      </div>
+
+      <!-- Stacked Cards for Mobile -->
+      <div class="md:hidden space-y-4" id="plansCardContainerMobile"></div>
+
+      <!-- Pagination -->
+      <div class="flex flex-col sm:flex-row justify-between items-center mt-4 space-y-2 sm:space-y-0 sm:space-x-4">
+        <div class="flex items-center space-x-2">
+          <button id="prevPage" class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50" disabled>Prev</button>
+          <span id="currentPage" class="text-sm font-semibold">1 / 1</span>
+          <button id="nextPage" class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Next</button>
+        </div>
+
+        <div class="flex items-center space-x-2">
+          <label for="rowsPerPage" class="text-sm font-semibold">Rows per page:</label>
+          <select id="rowsPerPage" class="border rounded px-2 py-1">
+            <option value="5" selected>5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+          </select>
+        </div>
+
+        <div class="flex items-center space-x-2">
+          <label for="jumpPage" class="text-sm font-semibold">Jump to page:</label>
+          <input type="number" id="jumpPage" min="1" class="border rounded px-2 py-1 w-16">
+          <button id="jumpPageBtn" class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300">Go</button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</main>
+
+<!-- Scripts -->
+<script>
+  // Mobile menu toggle
+  const mobileButton = document.getElementById('mobileMenuButton');
+  const mobileMenu = document.getElementById('mobileMenu');
+  mobileButton.addEventListener('click', () => {
+    mobileMenu.classList.toggle('hidden');
+  });
+</script>
+
+<script type="module" src="../modules/index.js"></script>
+
+</body>
+</html>

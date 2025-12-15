@@ -121,13 +121,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       Swal.fire({
         icon: "success",
         title: "Checklist Submitted!",
-        text: "Your PDF has been downloaded successfully."
+        text: "Your PDF has been downloaded successfully.",
+        timer: 1500,
+        showConfirmButton: false
       }).then(() => {
-        // Reset form & UI
         form.reset();
-        document.querySelectorAll('[id^="preview_file_item"]').forEach(preview => preview.innerHTML = '');
-        document.querySelectorAll('input[type="file"]').forEach(input => input.classList.add('hidden'));
-        document.querySelectorAll('.checklist-checkbox').forEach(cb => cb.checked = false);
+        document.querySelectorAll('[id^="preview_file_item"]').forEach(preview => {
+          preview.innerHTML = '';
+        });
+        document.querySelectorAll('input[type="file"]').forEach(input => {
+          input.classList.add('hidden');
+          input.value = "";
+        });
+        document.querySelectorAll('.checklist-checkbox').forEach(cb => {
+          cb.checked = false;
+        });
+        window.location.href = "/tsi-applicant/pages/index";
       });
 
     } catch (error) {

@@ -5,27 +5,32 @@ const path = require('path');
 const fs = require('fs');
 const session = require('express-session');
 const cors = require('cors');
+const { Server } = require("socket.io");
+const socketHandler = require('./socketHandler');
 
 const app = express();
 const server = http.createServer(app);
+
+// ------------------ SOCKET.IO ------------------
+const io = new Server(server, {
+    cors: { origin: "*", methods: ["GET", "POST"] }
+});
+// Initialize socket handler
+socketHandler(io);
 
 // ------------------ UPLOADS ------------------
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 
 // ------------------ MIDDLEWARE ------------------
-
-// JSON parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// CORS
 app.use(cors({
     origin: process.env.CORS_ORIGIN || 'http://localhost:3001',
     credentials: true
 }));
 
-// Session
 app.use(session({
     secret: "tsi_app_secret_123",
     resave: false,
@@ -44,6 +49,7 @@ app.use('/uploads', express.static(uploadDir));
 app.use('/pdfs', express.static(path.join(__dirname, 'pdfs')));
 app.use('/tsi-applicant', express.static(path.join(__dirname, 'tsi-applicant')));
 app.use('/admin', express.static(path.join(__dirname, 'admin')));
+app.use('/sounds', express.static(path.join(__dirname, 'sounds')));
 
 // ------------------ AUTH MIDDLEWARE ------------------
 function requireUserLogin(req, res, next) {
@@ -54,30 +60,25 @@ function requireUserLogin(req, res, next) {
 }
 
 function requireAdminLogin(req, res, next) {
-    if (!req.session.admin || (req.session.admin && req.session.admin.role !== 'admin')) {
+    if (!req.session.admin || req.session.admin.role !== 'admin') {
         return res.redirect('/admin/');
     }
     next();
 }
 
-
 // ------------------ API ROUTES ------------------
 app.use('/api/register', require('./routes/registerRoutes'));
 app.use('/api/login', require('./routes/loginRoutes'));
-app.use('/api/me', require('./routes/loginRoutes')); // returns current user
+app.use('/api/me', require('./routes/loginRoutes'));
 app.use('/api/plans', require('./routes/planRoutes'));
-app.use('/api/admin', require('./routes/adminAuthRoutes')); // OTP login
-app.use('/', require('./routes/checklistRoutes')); // your other APIs
+app.use('/api/admin', require('./routes/adminAuthRoutes'));
+app.use('/', require('./routes/checklistRoutes'));
 app.use('/api/user', require('./routes/userSessionRoutes'));
 app.use('/api/users', require('./routes/fetchRoutes'));
-app.use('/api/plans', require('./routes/planRoutes'));
 app.use('/api/dashboard', require('./routes/adminDashboardRoutes'));
-
-
+app.use('/api/chat', require('./routes/chatRoutes'));
 
 // ------------------ USER FRONTEND PAGES ------------------
-
-// Public pages
 app.get('/tsi-applicant/', (req, res) =>
     res.sendFile(path.join(__dirname, 'tsi-applicant/index.html'))
 );
@@ -87,15 +88,10 @@ app.get('/tsi-applicant/login', (req, res) =>
 app.get('/tsi-applicant/register', (req, res) =>
     res.sendFile(path.join(__dirname, 'tsi-applicant/register.html'))
 );
-
-// Logout
 app.get('/tsi-applicant/logout', (req, res) => {
     delete req.session.user;
     res.redirect('/tsi-applicant/');
 });
-
-
-// Protected user pages
 const userValidPages = ['index', 'form', 'contact'];
 app.get('/tsi-applicant/pages/:page', requireUserLogin, (req, res) => {
     const page = req.params.page;
@@ -103,26 +99,18 @@ app.get('/tsi-applicant/pages/:page', requireUserLogin, (req, res) => {
     res.sendFile(path.join(__dirname, `tsi-applicant/pages/${page}.html`));
 });
 
-
 // ------------------ ADMIN FRONTEND PAGES ------------------
-
-// Admin public pages
 app.get('/admin/', (req, res) =>
     res.sendFile(path.join(__dirname, 'admin/index.html'))
 );
 app.get('/admin/register', (req, res) =>
     res.sendFile(path.join(__dirname, 'admin/register.html'))
 );
-
-// Admin logout
 app.get('/admin/logout', (req, res) => {
     delete req.session.admin;
     res.redirect('/admin/');
 });
-
-
-// Protected admin pages
-const adminValidPages = ['index', 'userManagement', 'listApplicant', 'listApprove', 'monthlyRecords', 'viewPlan'];
+const adminValidPages = ['index', 'userManagement', 'listApplicant', 'listApprove', 'monthlyRecords', 'viewPlan', 'chat'];
 app.get('/admin/pages/:page', requireAdminLogin, (req, res) => {
     const page = req.params.page;
     if (!adminValidPages.includes(page)) return res.status(404).send('Page not found');
@@ -143,6 +131,6 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
-    console.log(`User app: ${process.env.CORS_ORIGIN || 'http://localhost:3001'}`);
+    console.log(`User app: http://localhost:${PORT}/tsi-applicant/`);
     console.log(`Admin panel: http://localhost:${PORT}/admin/`);
 });

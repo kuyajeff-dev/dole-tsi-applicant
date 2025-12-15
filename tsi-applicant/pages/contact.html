@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Chat with Administrator</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<link rel="shortcut icon" href="../public/images/image(1).png" type="image/x-icon">
 </head>
 <body class="bg-gray-100 font-sans">
 
@@ -12,11 +13,9 @@
 <nav class="bg-blue-700 text-white shadow-lg">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16 items-center">
-            
             <div class="flex-shrink-0 font-bold text-lg">
-                DOLE - Mechanical Plans
+                DOLE - TSI Chat Support
             </div>
-
             <div class="flex items-center space-x-4">
                 <a href="/tsi-applicant/pages/index" class="hover:bg-blue-800 px-3 py-2 rounded">Home</a>
                 <a href="/tsi-applicant/pages/form" class="hover:bg-blue-800 px-3 py-2 rounded">Checklist</a>
@@ -26,7 +25,7 @@
                 <div class="relative group">
                     <button class="flex items-center space-x-2 hover:bg-blue-800 px-3 py-2 rounded">
                         <span id="navUserName">User</span>
-                        <img id="navAvatar" src="/images/default-avatar.png" class="w-8 h-8 rounded-full border-2 border-white" alt="avatar">
+                        <img id="navAvatar" src="/uploads/default-avatar.png" class="w-8 h-8 rounded-full border-2 border-white" alt="avatar">
                     </button>
                     <div class="absolute right-0 mt-2 w-40 bg-white text-black rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
                         <a href="#" class="block px-4 py-2 hover:bg-gray-100">Profile</a>
@@ -39,71 +38,32 @@
 </nav>
 
 <!-- CHAT INTERFACE -->
-<main class="max-w-3xl mx-auto p-6">
+<main class="max-w-7xl mx-auto p-6 flex h-[80vh]">
 
-    <div class="bg-white rounded shadow p-6 flex flex-col h-[80vh]">
-        <h1 class="text-2xl font-bold mb-4">Chat with Administrator</h1>
-
-        <!-- Chat Box -->
-        <div id="chatBox" class="flex-1 overflow-y-auto p-4 space-y-4 border border-gray-200 rounded mb-4">
-            <!-- Example messages -->
-            <div class="flex items-start space-x-2">
-                <img src="https://via.placeholder.com/40" class="w-8 h-8 rounded-full" alt="Admin">
-                <div class="bg-gray-200 rounded-lg px-3 py-2 max-w-xs">
-                    <p class="text-sm">Hello! How can I assist you today?</p>
-                </div>
-            </div>
-
-            <div class="flex items-start justify-end space-x-2">
-                <div class="bg-blue-700 text-white rounded-lg px-3 py-2 max-w-xs">
-                    <p class="text-sm">Hi Admin, I have a question about my mechanical plan.</p>
-                </div>
-                <img src="<?php echo $avatar_path; ?>" class="w-8 h-8 rounded-full" alt="User">
-            </div>
-
-            <!-- More messages will be appended here dynamically -->
+    <!-- Chat Box Only -->
+    <div class="flex-1 bg-white rounded shadow flex flex-col">
+        <!-- Chat header -->
+        <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 id="chatWith" class="text-xl font-bold">Chat with Administrator</h2>
         </div>
 
-        <!-- Input box -->
-        <form id="chatForm" class="flex space-x-2">
+        <!-- Messages container -->
+        <div id="chatBox" class="flex-1 overflow-y-auto p-4 space-y-4">
+            <!-- Messages will appear here -->
+        </div>
+
+        <!-- Message input -->
+        <form id="chatForm" class="flex border-t border-gray-200 p-4">
             <input type="text" id="messageInput" placeholder="Type your message..." required
                    class="flex-1 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-            <button type="submit" class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800 transition">Send</button>
+            <button type="submit" class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800 transition ml-2">Send</button>
         </form>
     </div>
 
 </main>
 
-<script>
-const chatForm = document.getElementById('chatForm');
-const chatBox = document.getElementById('chatBox');
-
-chatForm.addEventListener('submit', function(e) {
-    e.preventDefault();
-    const messageInput = document.getElementById('messageInput');
-    const msg = messageInput.value.trim();
-    if(msg === '') return;
-
-    // Add user message to chat
-    const userMessage = document.createElement('div');
-    userMessage.classList.add('flex', 'items-start', 'justify-end', 'space-x-2');
-    userMessage.innerHTML = `
-        <div class="bg-blue-700 text-white rounded-lg px-3 py-2 max-w-xs">
-            <p class="text-sm">${msg}</p>
-        </div>
-        <img src="<?php echo $avatar_path; ?>" class="w-8 h-8 rounded-full" alt="User">
-    `;
-    chatBox.appendChild(userMessage);
-
-    // Scroll to bottom
-    chatBox.scrollTop = chatBox.scrollHeight;
-
-    // Clear input
-    messageInput.value = '';
-
-    // Here you can also send the message to the server using AJAX/fetch
-});
-</script>
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script type="module" src="../modules/userChat.js"></script>
 
 </body>
 </html>

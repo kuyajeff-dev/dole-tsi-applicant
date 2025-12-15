@@ -113,8 +113,15 @@ async function loadPlans() {
 
         // Update stats
         document.getElementById("countPlans").textContent = plans.length;
-        document.getElementById("countPending").textContent = plans.filter(p => p.status?.toLowerCase() === "pending").length;
-        document.getElementById("countCompleted").textContent = plans.filter(p => p.status?.toLowerCase() === "completed").length;
+
+        const pendingCount = plans.filter(p => p.status?.toLowerCase() === "pending").length;
+        const rejectedCount = plans.filter(p => p.status?.toLowerCase() === "rejected").length;
+
+        document.getElementById("countPending").textContent = `${pendingCount} / ${rejectedCount}`;
+
+        document.getElementById("countCompleted").textContent = plans.filter(p =>
+            p.status?.toLowerCase() === "approved"
+        ).length;
 
         currentPage = 1;
         renderPlansPage();

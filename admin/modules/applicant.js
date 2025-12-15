@@ -100,15 +100,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   ----------------------------- */
   function renderTable() {
   tableBody.innerHTML = "";
+  const totalPages = Math.ceil(filteredPlans.length / rowsPerPage);
   const start = (currentPage - 1) * rowsPerPage;
   const end = start + rowsPerPage;
   const pageData = filteredPlans.slice(start, end);
 
+  // Update current page display
+  currentPageEl.textContent = `${currentPage} / ${totalPages || 1}`;
+
+  // Enable/disable prev/next buttons
+  prevBtn.disabled = currentPage <= 1;
+  nextBtn.disabled = currentPage >= totalPages;
+
   if (!pageData.length) {
-  tableBody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-gray-500">No plans found</td></tr>`;
-  currentPageEl.textContent = `0 / 0`;
-  prevBtn.disabled = nextBtn.disabled = true;
-  return;
+    tableBody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-gray-500">No plans found</td></tr>`;
+    return;
   }
 
   pageData.forEach((plan, index) => {

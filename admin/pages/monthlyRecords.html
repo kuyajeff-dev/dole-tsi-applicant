@@ -7,14 +7,15 @@
   <link rel="shortcut icon" href="/tsi-applicant/public/images/image(1).png" type="image/x-icon">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 </head>
 <body class="bg-gray-100 font-sans">
 
 <div class="flex h-screen">
 
   <!-- SIDEBAR -->
-  <aside class="w-64 bg-blue-500 shadow-md min-h-screen hidden md:block">
-    <div class="p-6">
+  <aside class="w-64 bg-blue-500 shadow-md hidden md:block sticky top-0 h-screen">
+    <div class="p-6 overflow-auto h-full">
       <h2 class="font-bold text-xl mb-4 text-white">Admin Menu</h2>
       <ul>
         <li class="mb-3"><a href="/admin/pages/index" class="block py-2 px-3 rounded hover:bg-blue-100 text-white">Dashboard</a></li>
@@ -37,10 +38,10 @@
   </aside>
 
   <!-- Main content -->
-  <div class="flex-1 flex flex-col">
+  <div class="flex-1 flex flex-col overflow-auto">
 
     <!-- Top Navbar -->
-    <header class="bg-white shadow px-4 py-4 flex justify-between items-center">
+    <header class="bg-white shadow px-4 py-4 flex justify-between items-center sticky top-0 z-10">
       <h1 class="text-xl font-bold text-gray-800">Monthly Records</h1>
       <div class="flex items-center space-x-4">
         <div class="relative group">
@@ -56,43 +57,145 @@
       </div>
     </header>
 
-    <!-- Chart content -->
-    <main class="p-6 flex-1 flex items-center justify-center">
-      <div class="bg-white p-6 rounded shadow w-full max-w-4xl">
-        <h2 class="text-lg font-bold mb-4 text-center">Monthly Plan Submissions</h2>
-        <canvas id="monthlyChart" class="w-full h-96"></canvas>
+    <main class="p-6 flex-1">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- Submitted Chart -->
+        <div class="bg-white p-4 rounded shadow flex flex-col items-center">
+          <h3 class="text-center font-semibold mb-2">Pending</h3>
+          <canvas id="PendingChart" class="w-full h-64"></canvas>
+          <div class="flex gap-2 mt-2">
+            <button class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+                    onclick="downloadChart(pendingChart, 'Pending')">Download Chart</button>
+            <button class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                    onclick="exportExcel('Pending', pendingData)">Export Excel</button>
+          </div>
+        </div>
+
+        <!-- Approved / Rejected Chart -->
+        <div class="bg-white p-4 rounded shadow flex flex-col items-center">
+          <h3 class="text-center font-semibold mb-2">Approved / Rejected</h3>
+          <canvas id="approvedChart" class="w-full h-64"></canvas>
+          <div class="flex gap-2 mt-2">
+            <button class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+                    onclick="downloadChart(approvedChart, 'Approved')">Download Chart</button>
+            <button class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                    onclick="exportExcel('Approved', approvedData)">Export Excel</button>
+          </div>
+        </div>
+
+        <!-- Daily Monitoring Chart -->
+        <div class="bg-white p-4 rounded shadow flex flex-col items-center">
+          <h3 class="text-center font-semibold mb-2">Daily Monitoring</h3>
+          <canvas id="dailyChart" class="w-full h-64"></canvas>
+          <div class="flex gap-2 mt-2 items-center">
+            <button class="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600"
+                    onclick="changeMonth(-1)">Prev Month</button>
+            <span id="currentMonthLabel" class="font-semibold px-2"></span>
+            <button class="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600"
+                    onclick="changeMonth(1)">Next Month</button>
+            <button class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+                    onclick="downloadChart(dailyChart, 'DailyMonitoring')">Download Chart</button>
+            <button class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                    onclick="exportExcel('Daily Monitoring', dailyMonthlyData[currentMonth], true)">Export Excel</button>
+          </div>
+        </div>
+
+        <!-- Total Chart -->
+        <div class="bg-white p-4 rounded shadow flex flex-col items-center">
+          <h3 class="text-center font-semibold mb-2">Total</h3>
+          <canvas id="totalChart" class="w-full h-64"></canvas>
+        </div>
+
       </div>
     </main>
-
   </div>
 </div>
 <script type="module" src="../modules/records.js"></script>
 <script>
+let currentMonth = new Date().getMonth() + 1; // default current month
+let pendingChart, approvedChart, dailyChart, totalChart;
 
-  // Example Chart.js setup
-  const ctx = document.getElementById('monthlyChart').getContext('2d');
-  const monthlyChart = new Chart(ctx, {
+// Fetch monthly data
+async function fetchMonthlyData() {
+  const res = await fetch("/api/monthly-data");
+  const data = await res.json();
+  return data;
+}
+
+// Fetch daily monitoring data for current month
+async function fetchDailyData(month) {
+  const res = await fetch(`/api/daily-data?month=${month}`);
+  const data = await res.json();
+  return data;
+}
+
+// Initialize charts dynamically
+async function createCharts() {
+  const monthlyData = await fetchMonthlyData();
+  const dailyData = await fetchDailyData(currentMonth);
+
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // Submitted Chart
+  pendingChart?.destroy();
+  pendingChart = new Chart(document.getElementById('PendingChart'), {
+    type: 'bar',
+    data: { labels: months, datasets: [{ label: 'Pending', data: monthlyData.pending, backgroundColor: 'rgba(59,130,246,0.7)' }] },
+    options: { responsive: true, scales: { y: { beginAtZero: true, stepSize: 5 } } }
+  });
+
+  // Approved / Rejected Chart
+  approvedChart?.destroy();
+  approvedChart = new Chart(document.getElementById('approvedChart'), {
     type: 'bar',
     data: {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-      datasets: [{
-        label: 'Plans Submitted',
-        data: [12, 19, 8, 14, 10, 15, 9, 7, 16, 11, 13, 18],
-        backgroundColor: 'rgba(59, 130, 246, 0.7)',
-        borderColor: 'rgba(59, 130, 246, 1)',
-        borderWidth: 1
-      }]
+      labels: months,
+      datasets: [
+        { label: 'Approved', data: monthlyData.approved, backgroundColor: 'rgba(16,185,129,0.7)' },
+        { label: 'Rejected', data: monthlyData.rejected, backgroundColor: 'rgba(239,68,68,0.7)' }
+      ]
     },
-    options: {
-      responsive: true,
-      scales: {
-        y: { beginAtZero: true }
-      }
-    }
+    options: { responsive: true, scales: { y: { beginAtZero: true, stepSize: 5 } } }
   });
+
+  // Daily Monitoring Chart
+  dailyChart?.destroy();
+  dailyChart = new Chart(document.getElementById('dailyChart'), {
+    type: 'bar',
+    data: {
+      labels: Array.from({ length: dailyData.length }, (_, i) => i+1),
+      datasets: [{ label: 'Daily Monitoring', data: dailyData, backgroundColor: 'rgba(239,68,68,0.7)' }]
+    },
+    options: { responsive: true, scales: { y: { beginAtZero: true, stepSize: 1 } } }
+  });
+
+  // Total Chart
+  const totalData = monthlyData.pending.map((v,i) => v + monthlyData.approved[i] + monthlyData.rejected[i]);
+  totalChart?.destroy();
+  totalChart = new Chart(document.getElementById('totalChart'), {
+    type: 'line',
+    data: { labels: months, datasets: [{ label: 'Total', data: totalData, fill: true, borderColor: 'rgba(99,102,241,1)', backgroundColor: 'rgba(99,102,241,0.25)', pointRadius: 4, borderWidth: 2 }] },
+    options: { responsive: true, scales: { y: { beginAtZero: true, stepSize: 5 } } }
+  });
+
+  document.getElementById('currentMonthLabel').textContent = new Date(0, currentMonth-1).toLocaleString('default', { month: 'long' });
+}
+
+// Prev / Next Month
+async function changeMonth(offset) {
+  currentMonth += offset;
+  if(currentMonth < 1) currentMonth = 12;
+  if(currentMonth > 12) currentMonth = 1;
+  const dailyData = await fetchDailyData(currentMonth);
+  dailyChart.data.labels = Array.from({ length: dailyData.length }, (_, i) => i+1);
+  dailyChart.data.datasets[0].data = dailyData;
+  dailyChart.update();
+  document.getElementById('currentMonthLabel').textContent = new Date(0, currentMonth-1).toLocaleString('default', { month: 'long' });
+}
+
+createCharts();
 </script>
 
 </body>
 </html>
-
-<script type="module" src="../modules/records.js"></script>

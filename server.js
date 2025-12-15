@@ -77,6 +77,7 @@ app.use('/api/user', require('./routes/userSessionRoutes'));
 app.use('/api/users', require('./routes/fetchRoutes'));
 app.use('/api/dashboard', require('./routes/adminDashboardRoutes'));
 app.use('/api/chat', require('./routes/chatRoutes'));
+app.use('/api', require('./routes/chartRoutes'));
 
 // ------------------ USER FRONTEND PAGES ------------------
 app.get('/tsi-applicant/', (req, res) =>

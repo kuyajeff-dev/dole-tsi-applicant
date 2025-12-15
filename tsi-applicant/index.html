@@ -13,9 +13,9 @@
     <link rel="apple-touch-icon" href="./public/images/image(1).png">
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="./assets/tailwindcss.js"></script>
     <!-- Alpine.js for interactivity -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="./assets/alpine.js"></script>
 </head>
 <body class="h-screen bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100 flex items-center justify-center">
 
@@ -98,12 +98,29 @@
 </body>
 <script>
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js')
-      .then(reg => console.log("Service Worker registered:", reg))
-      .catch(err => console.error("SW registration failed:", err));
+  navigator.serviceWorker.register('/tsi-applicant/service-worker.js').then(reg => {
+    console.log("SW registered");
+
+    reg.addEventListener('updatefound', () => {
+      const newSW = reg.installing;
+      newSW.addEventListener('statechange', () => {
+        if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+          // New SW installed, prompt client to refresh
+          newSW.postMessage({ type: "SKIP_WAITING" });
+        }
+      });
+    });
+  });
+
+  // Listen for SW update messages
+  navigator.serviceWorker.addEventListener('message', event => {
+    if (event.data && event.data.type === "SW_UPDATED") {
+      console.log("New SW installed, reloading page...");
+      window.location.reload();
+    }
   });
 }
+
 
 // Optional: Install button prompt
 let deferredPrompt;

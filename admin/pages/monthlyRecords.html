@@ -51,7 +51,6 @@
             <img id="navAvatar" src="/uploads/default-avatar.png" class="w-8 h-8 rounded-full border-2 border-gray-300" alt="avatar">
           </button>
           <div class="absolute right-0 mt-2 w-40 bg-white text-black rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
-            <a href="#" class="block px-4 py-2 hover:bg-gray-100">Profile</a>
             <a href="/admin/logout" class="block px-4 py-2 hover:bg-gray-100 text-red-600">Logout</a>
           </div>
         </div>
@@ -61,15 +60,13 @@
     <main class="p-6 flex-1">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        <!-- Submitted Chart -->
+        <!-- Pending Chart -->
         <div class="bg-white p-4 rounded shadow flex flex-col items-center">
           <h3 class="text-center font-semibold mb-2">Pending</h3>
           <canvas id="PendingChart" class="w-full h-64"></canvas>
           <div class="flex gap-2 mt-2">
-            <button class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
-                    onclick="downloadChart(pendingChart, 'Pending')">Download Chart</button>
-            <button class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-                    onclick="exportExcel('Pending', pendingData)">Export Excel</button>
+            <button id="downloadPendingPNG" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">Download PNG</button>
+            <button id="downloadPendingXLSX" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Download Excel</button>
           </div>
         </div>
 
@@ -78,10 +75,8 @@
           <h3 class="text-center font-semibold mb-2">Approved / Rejected</h3>
           <canvas id="approvedChart" class="w-full h-64"></canvas>
           <div class="flex gap-2 mt-2">
-            <button class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
-                    onclick="downloadChart(approvedChart, 'Approved')">Download Chart</button>
-            <button class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-                    onclick="exportExcel('Approved', approvedData)">Export Excel</button>
+            <button id="downloadApprovedPNG" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">Download PNG</button>
+            <button id="downloadApprovedXLSX" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Download Excel</button>
           </div>
         </div>
 
@@ -90,15 +85,11 @@
           <h3 class="text-center font-semibold mb-2">Daily Monitoring</h3>
           <canvas id="dailyChart" class="w-full h-64"></canvas>
           <div class="flex gap-2 mt-2 items-center">
-            <button class="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600"
-                    onclick="changeMonth(-1)">Prev Month</button>
+            <button class="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600" id="prevMonth">Prev Month</button>
             <span id="currentMonthLabel" class="font-semibold px-2"></span>
-            <button class="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600"
-                    onclick="changeMonth(1)">Next Month</button>
-            <button class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
-                    onclick="downloadChart(dailyChart, 'DailyMonitoring')">Download Chart</button>
-            <button class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-                    onclick="exportExcel('Daily Monitoring', dailyMonthlyData[currentMonth], true)">Export Excel</button>
+            <button class="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600" id="nextMonth">Next Month</button>
+            <button id="downloadDailyPNG" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">Download PNG</button>
+            <button id="downloadDailyXLSX" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Download Excel</button>
           </div>
         </div>
 
@@ -106,6 +97,10 @@
         <div class="bg-white p-4 rounded shadow flex flex-col items-center">
           <h3 class="text-center font-semibold mb-2">Total Applicants</h3>
           <canvas id="totalChart" class="w-full h-64"></canvas>
+          <div class="flex gap-2 mt-2">
+            <button id="downloadTotalPNG" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">Download PNG</button>
+            <button id="downloadTotalXLSX" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Download Excel</button>
+          </div>
         </div>
 
       </div>
@@ -113,90 +108,6 @@
   </div>
 </div>
 <script type="module" src="../modules/records.js"></script>
-<script>
-let currentMonth = new Date().getMonth() + 1; // default current month
-let pendingChart, approvedChart, dailyChart, totalChart;
-
-// Fetch monthly data
-async function fetchMonthlyData() {
-  const res = await fetch("/api/monthly-data");
-  const data = await res.json();
-  return data;
-}
-
-// Fetch daily monitoring data for current month
-async function fetchDailyData(month) {
-  const res = await fetch(`/api/daily-data?month=${month}`);
-  const data = await res.json();
-  return data;
-}
-
-// Initialize charts dynamically
-async function createCharts() {
-  const monthlyData = await fetchMonthlyData();
-  const dailyData = await fetchDailyData(currentMonth);
-
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-  // Submitted Chart
-  pendingChart?.destroy();
-  pendingChart = new Chart(document.getElementById('PendingChart'), {
-    type: 'bar',
-    data: { labels: months, datasets: [{ label: 'Pending', data: monthlyData.pending, backgroundColor: 'rgba(59,130,246,0.7)' }] },
-    options: { responsive: true, scales: { y: { beginAtZero: true, stepSize: 5 } } }
-  });
-
-  // Approved / Rejected Chart
-  approvedChart?.destroy();
-  approvedChart = new Chart(document.getElementById('approvedChart'), {
-    type: 'bar',
-    data: {
-      labels: months,
-      datasets: [
-        { label: 'Approved', data: monthlyData.approved, backgroundColor: 'rgba(16,185,129,0.7)' },
-        { label: 'Rejected', data: monthlyData.rejected, backgroundColor: 'rgba(239,68,68,0.7)' }
-      ]
-    },
-    options: { responsive: true, scales: { y: { beginAtZero: true, stepSize: 5 } } }
-  });
-
-  // Daily Monitoring Chart
-  dailyChart?.destroy();
-  dailyChart = new Chart(document.getElementById('dailyChart'), {
-    type: 'bar',
-    data: {
-      labels: Array.from({ length: dailyData.length }, (_, i) => i+1),
-      datasets: [{ label: 'Daily Monitoring', data: dailyData, backgroundColor: 'rgba(239,68,68,0.7)' }]
-    },
-    options: { responsive: true, scales: { y: { beginAtZero: true, stepSize: 1 } } }
-  });
-
-  // Total Chart
-  const totalData = monthlyData.pending.map((v,i) => v + monthlyData.approved[i] + monthlyData.rejected[i]);
-  totalChart?.destroy();
-  totalChart = new Chart(document.getElementById('totalChart'), {
-    type: 'line',
-    data: { labels: months, datasets: [{ label: 'Total', data: totalData, fill: true, borderColor: 'rgba(99,102,241,1)', backgroundColor: 'rgba(99,102,241,0.25)', pointRadius: 4, borderWidth: 2 }] },
-    options: { responsive: true, scales: { y: { beginAtZero: true, stepSize: 5 } } }
-  });
-
-  document.getElementById('currentMonthLabel').textContent = new Date(0, currentMonth-1).toLocaleString('default', { month: 'long' });
-}
-
-// Prev / Next Month
-async function changeMonth(offset) {
-  currentMonth += offset;
-  if(currentMonth < 1) currentMonth = 12;
-  if(currentMonth > 12) currentMonth = 1;
-  const dailyData = await fetchDailyData(currentMonth);
-  dailyChart.data.labels = Array.from({ length: dailyData.length }, (_, i) => i+1);
-  dailyChart.data.datasets[0].data = dailyData;
-  dailyChart.update();
-  document.getElementById('currentMonthLabel').textContent = new Date(0, currentMonth-1).toLocaleString('default', { month: 'long' });
-}
-
-createCharts();
-</script>
 
 </body>
 </html>

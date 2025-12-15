@@ -17,7 +17,7 @@ let applicants = [];
 let unreadCounts = {};
 let timestampElements = [];
 
-// ---------------- Helpers ----------------
+/* ---------------- Helpers ---------------- */
 function normalizeAvatar(path) {
     if (!path) return "/uploads/default-avatar.png";
     return `/uploads/${path.replace(/^\/?uploads[\\/]+/, "")}`;
@@ -26,128 +26,123 @@ function normalizeAvatar(path) {
 function timeAgo(date) {
     const diff = (new Date() - new Date(date)) / 1000;
     if (diff < 60) return "Just now";
-    if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
-    return `${Math.floor(diff/86400)}d ago`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return `${Math.floor(diff / 86400)}d ago`;
 }
 
 function formatUnread(count) {
     return count > 99 ? "99+" : count;
 }
 
-// ---------------- Render Chat Message ----------------
-function renderMessage(msg, isAdmin) {
+/* ---------------- Render Message ---------------- */
+function renderMessage(msg, isAdmin, autoScroll = true) {
     const wrapper = document.createElement("div");
-    wrapper.className = `flex gap-2 ${isAdmin ? "justify-end" : "justify-start"} items-start mb-2`;
+    wrapper.className = `flex gap-2 ${isAdmin ? "justify-end" : "justify-start"} mb-2`;
 
     const img = document.createElement("img");
     img.src = normalizeAvatar(msg.avatar);
-    img.className = "w-8 h-8 rounded-full object-cover border";
+    img.className = "w-8 h-8 rounded-full border object-cover";
     img.onerror = () => img.src = "/uploads/default-avatar.png";
 
-    const bubbleContainer = document.createElement("div");
-    bubbleContainer.className = "flex flex-col max-w-xs";
+    const bubbleBox = document.createElement("div");
+    bubbleBox.className = "flex flex-col max-w-xs";
 
     if (!isAdmin) {
-        const senderName = document.createElement("div");
-        senderName.textContent = msg.full_name || "User";
-        senderName.className = "text-sm font-semibold text-gray-700 mb-1";
-        bubbleContainer.appendChild(senderName);
+        const name = document.createElement("div");
+        name.className = "text-xs font-semibold text-gray-600 mb-1";
+        name.textContent = msg.full_name || "User";
+        bubbleBox.appendChild(name);
     }
 
     const bubble = document.createElement("div");
-    bubble.className = `px-3 py-2 rounded break-words ${isAdmin ? "bg-blue-700 text-white" : "bg-gray-200 text-black"}`;
+    bubble.className = isAdmin
+        ? "bg-blue-700 text-white px-3 py-2 rounded"
+        : "bg-gray-200 text-black px-3 py-2 rounded";
     bubble.textContent = msg.message;
 
-    const timestamp = document.createElement("div");
-    timestamp.className = "text-xs text-gray-400 mt-1 self-end";
-    timestamp.textContent = timeAgo(msg.created_at);
+    const time = document.createElement("div");
+    time.className = "text-xs text-gray-400 mt-1 self-end";
+    time.textContent = timeAgo(msg.created_at);
+    timestampElements.push({ el: time, date: msg.created_at });
 
-    bubbleContainer.appendChild(bubble);
-    bubbleContainer.appendChild(timestamp);
-    timestampElements.push({ el: timestamp, date: msg.created_at });
+    bubbleBox.appendChild(bubble);
+    bubbleBox.appendChild(time);
 
     if (isAdmin) {
-        wrapper.appendChild(bubbleContainer);
+        wrapper.appendChild(bubbleBox);
         wrapper.appendChild(img);
     } else {
         wrapper.appendChild(img);
-        wrapper.appendChild(bubbleContainer);
-        notifSound.play().catch(() => {});
-    }
-
-    // Add unread indicator inside chat if message is unread and chat not selected
-    if (!isAdmin && (!selectedApplicant || selectedApplicant.id !== msg.sender_id)) {
-        const unreadBubble = document.createElement("div");
-        unreadBubble.className = "text-xs text-white bg-red-500 px-2 py-0.5 rounded self-start mt-1";
-        unreadBubble.textContent = formatUnread(unreadCounts[msg.sender_id] || 1);
-        bubbleContainer.appendChild(unreadBubble);
+        wrapper.appendChild(bubbleBox);
     }
 
     conversation.appendChild(wrapper);
-    conversation.scrollTop = conversation.scrollHeight;
+    if (autoScroll) conversation.scrollTop = conversation.scrollHeight;
 }
 
-// ---------------- Dynamic timestamps ----------------
-setInterval(() => timestampElements.forEach(i => i.el.textContent = timeAgo(i.date)), 30000);
+/* ---------------- Dynamic timestamps ---------------- */
+setInterval(() => {
+    timestampElements.forEach(t => t.el.textContent = timeAgo(t.date));
+}, 30000);
 
-// ---------------- Admin ----------------
+/* ---------------- Admin ---------------- */
 async function loadAdmin() {
-    try {
-        const res = await fetch("/api/user/adminOnly", { credentials: "include" });
-        const user = await res.json();
-        CURRENT_USER = { id: user.id, full_name: user.full_name, avatar: normalizeAvatar(user.avatar) };
-        navUserName.textContent = CURRENT_USER.full_name;
-        navAvatar.src = CURRENT_USER.avatar;
-    } catch (err) { console.error(err); }
+    const res = await fetch("/api/user/adminOnly", { credentials: "include" });
+    const user = await res.json();
+    CURRENT_USER = {
+        id: user.id,
+        full_name: user.full_name,
+        avatar: normalizeAvatar(user.avatar)
+    };
+    navUserName.textContent = CURRENT_USER.full_name;
+    navAvatar.src = CURRENT_USER.avatar;
 }
 
-// ---------------- Applicants ----------------
+/* ---------------- Applicants ---------------- */
 async function loadApplicants() {
-    try {
-        const res = await fetch(`/api/chat/applicants?admin_id=${CURRENT_USER.id}`, { credentials: "include" });
-        applicants = await res.json();
-        applicants.forEach(a => unreadCounts[a.id] = a.unreadCount || 0);
-        renderApplicants();
-    } catch (err) { console.error(err); }
+    const res = await fetch(`/api/chat/applicants?admin_id=${CURRENT_USER.id}`, { credentials: "include" });
+    applicants = await res.json();
+
+    applicants.forEach(a => {
+        unreadCounts[a.id] = a.unreadCount || 0;
+        a.lastMessageTime = a.lastMessageTime || 0;
+    });
+
+    renderApplicants();
 }
 
-// ---------------- Render Applicants List ----------------
-function renderApplicants(filteredList = null) {
-    const list = filteredList || applicants;
-    applicantsList.innerHTML = "";
-
-    // Sort: unread first, then last message time
-    list.sort((a, b) => {
-        const aUnread = unreadCounts[a.id] || 0;
-        const bUnread = unreadCounts[b.id] || 0;
-        if (bUnread !== aUnread) return bUnread - aUnread;
+/* ---------------- Sort + Render Applicants ---------------- */
+function sortApplicants(list) {
+    return list.sort((a, b) => {
+        const au = unreadCounts[a.id] || 0;
+        const bu = unreadCounts[b.id] || 0;
+        if (bu !== au) return bu - au;
         return new Date(b.lastMessageTime || 0) - new Date(a.lastMessageTime || 0);
     });
+}
+
+function renderApplicants(filtered = null) {
+    const list = sortApplicants(filtered || applicants);
+    applicantsList.innerHTML = "";
 
     list.forEach(a => {
         const div = document.createElement("div");
-        div.className = "p-3 flex flex-col cursor-pointer hover:bg-gray-100 rounded relative applicant-item";
-        div.dataset.id = a.id;
+        div.className = "p-3 hover:bg-gray-100 cursor-pointer rounded relative";
 
-        // Top row: avatar + name
-        const topRow = document.createElement("div");
-        topRow.className = "flex items-center gap-3";
+        div.innerHTML = `
+            <div class="flex gap-3 items-center">
+                <img src="${normalizeAvatar(a.avatar)}"
+                     class="w-10 h-10 rounded-full border object-cover">
+                <div class="flex-1">
+                    <div class="font-semibold">${a.full_name}</div>
+                    <div class="text-sm text-gray-500 truncate">
+                        ${a.lastMessage || ""}
+                    </div>
+                </div>
+            </div>
+        `;
 
-        const avatar = document.createElement("img");
-        avatar.src = normalizeAvatar(a.avatar);
-        avatar.className = "w-10 h-10 rounded-full border object-cover";
-        avatar.onerror = () => avatar.src = "/uploads/default-avatar.png";
-
-        const name = document.createElement("span");
-        name.textContent = a.full_name;
-        name.className = "font-semibold";
-
-        topRow.appendChild(avatar);
-        topRow.appendChild(name);
-        div.appendChild(topRow);
-
-        // Messenger-style unread badge
         const unread = unreadCounts[a.id] || 0;
         if (unread > 0) {
             const badge = document.createElement("div");
@@ -156,98 +151,84 @@ function renderApplicants(filteredList = null) {
             div.appendChild(badge);
         }
 
-        // Last message text
-        const lastMsg = document.createElement("span");
-        lastMsg.dataset.userId = a.id;
-        lastMsg.className = "text-gray-500 text-sm mt-1 break-words";
-        lastMsg.textContent = a.lastMessage || "";
-        div.appendChild(lastMsg);
-
-        // Click to select
-        div.addEventListener("click", () => selectApplicant(a));
+        div.onclick = () => selectApplicant(a);
         applicantsList.appendChild(div);
     });
 }
-// ---------------- Select Applicant ----------------
+
+/* ---------------- Select Applicant (FIXED) ---------------- */
 async function selectApplicant(a) {
     selectedApplicant = a;
+    unreadCounts[a.id] = 0;
+
     document.getElementById("chatTitle").textContent = a.full_name;
     closeChatBtn.classList.remove("hidden");
     conversation.innerHTML = "";
-    unreadCounts[a.id] = 0;
+
+    const res = await fetch(`/api/chat/history?user_id=${a.id}&admin_id=${CURRENT_USER.id}`, { credentials: "include" });
+    let messages = await res.json();
+
+    messages.sort((x, y) => new Date(x.created_at) - new Date(y.created_at));
+
+    messages.forEach((m, i) =>
+        renderMessage(m, m.sender_id === CURRENT_USER.id, i === messages.length - 1)
+    );
+
+    /* ✅ CRITICAL FIX: update last message from history */
+    if (messages.length) {
+        const last = messages[messages.length - 1];
+        a.lastMessage = last.message;
+        a.lastMessageTime = last.created_at;
+    }
+
     renderApplicants();
-
-    try {
-        const res = await fetch(`/api/chat/history?user_id=${a.id}&admin_id=${CURRENT_USER.id}`, { credentials: "include" });
-        const messages = await res.json();
-        messages.forEach(m => renderMessage(m, m.sender_id === CURRENT_USER.id));
-    } catch (err) { console.error(err); }
-
     sendBtn.disabled = false;
 }
-
-// ---------------- Close chat ----------------
+/* ---------------- Close Chat ---------------- */
 closeChatBtn.addEventListener("click", () => {
     selectedApplicant = null;
-    conversation.innerHTML = '<div id="placeholder" class="text-center text-gray-400 mt-12">Open a conversation to start chatting.</div>';
+
+    conversation.innerHTML = `
+        <div class="text-center text-gray-400 mt-12">
+            Open a conversation to start chatting.
+        </div>
+    `;
+
     document.getElementById("chatTitle").textContent = "Select an applicant";
     closeChatBtn.classList.add("hidden");
     sendBtn.disabled = true;
+
+    // Important: re-render to remove active/unread state
+    renderApplicants();
 });
 
-// ---------------- System Notifications ----------------
-function requestNotificationPermission() {
-    if ("Notification" in window && Notification.permission === "default") {
-        Notification.requestPermission();
-    }
-}
-
-function showNotification(msg) {
-    if (Notification.permission !== "granted") return;
-    if (selectedApplicant && msg.sender_id === selectedApplicant.id) return;
-
-    const notification = new Notification(`New message from ${msg.full_name}`, {
-        body: msg.message.length > 100 ? msg.message.substring(0, 100) + "…" : msg.message,
-        icon: normalizeAvatar(msg.avatar),
-        tag: `chat-msg-${msg.sender_id}`
-    });
-
-    notification.onclick = () => {
-        window.focus();
-        selectApplicant(applicants.find(a => a.id === msg.sender_id));
-        notification.close();
-    };
-}
-
-// ---------------- Socket ----------------
+/* ---------------- Socket (WHATSAPP STYLE) ---------------- */
 function setupSocket() {
-    initSocketConnection(CURRENT_USER, (msg) => {
+    initSocketConnection(CURRENT_USER, msg => {
         if (!msg.sender_id) return;
 
-        const isSelected = selectedApplicant && msg.sender_id === selectedApplicant.id;
+        let a = applicants.find(x => x.id === msg.sender_id);
+        if (!a) return;
 
-        if (isSelected) {
+        a.lastMessage = msg.message;
+        a.lastMessageTime = msg.created_at;
+
+        if (selectedApplicant && selectedApplicant.id === msg.sender_id) {
             renderMessage(msg, false);
             unreadCounts[msg.sender_id] = 0;
         } else {
             unreadCounts[msg.sender_id] = (unreadCounts[msg.sender_id] || 0) + 1;
-            showNotification(msg);
-        }
-
-        const applicant = applicants.find(a => a.id === msg.sender_id);
-        if (applicant) {
-            applicant.lastMessage = msg.message;
-            applicant.lastMessageTime = msg.created_at;
+            notifSound.play().catch(() => {});
         }
 
         renderApplicants();
     });
 }
 
-// ---------------- Send Message ----------------
+/* ---------------- Send Message ---------------- */
 adminSendForm.addEventListener("submit", e => {
     e.preventDefault();
-    if (!selectedApplicant || !adminMessageInput.value) return;
+    if (!selectedApplicant || !adminMessageInput.value.trim()) return;
 
     const payload = {
         sender_id: CURRENT_USER.id,
@@ -260,24 +241,22 @@ adminSendForm.addEventListener("submit", e => {
     sendMessage(payload);
     renderMessage(payload, true);
 
-    const a = selectedApplicant;
-    a.lastMessage = payload.message;
-    a.lastMessageTime = payload.created_at;
-    renderApplicants();
+    selectedApplicant.lastMessage = payload.message;
+    selectedApplicant.lastMessageTime = payload.created_at;
 
+    renderApplicants();
     adminMessageInput.value = "";
 });
 
-// ---------------- Search ----------------
+/* ---------------- Search ---------------- */
 applicantSearch.addEventListener("input", () => {
     const term = applicantSearch.value.toLowerCase();
     renderApplicants(applicants.filter(a => a.full_name.toLowerCase().includes(term)));
 });
 
-// ---------------- Initialize ----------------
+/* ---------------- Init ---------------- */
 document.addEventListener("DOMContentLoaded", async () => {
     await loadAdmin();
     await loadApplicants();
-    requestNotificationPermission();
     setupSocket();
 });

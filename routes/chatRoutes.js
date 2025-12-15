@@ -5,18 +5,45 @@ const db = require("../db/mysql");
 // GET all applicants with last message and unread count
 router.get("/applicants", async (req, res) => {
   try {
-    const adminId = req.query.admin_id; // get admin id from query/session
+    const adminId = req.query.admin_id;
+
     const [rows] = await db.execute(`
-      SELECT u.id, u.full_name, u.avatar,
-        m.message AS lastMessage,
-        COUNT(CASE WHEN m.is_read = 0 AND m.receiver_id = ? THEN 1 END) AS unreadCount,
-        MAX(m.created_at) AS lastMessageTime
+      SELECT 
+        u.id,
+        u.full_name,
+        u.avatar,
+        lm.message AS lastMessage,
+        lm.created_at AS lastMessageTime,
+        (
+          SELECT COUNT(*)
+          FROM chat_messages
+          WHERE sender_id = u.id
+            AND receiver_id = ?
+            AND is_read = 0
+        ) AS unreadCount
       FROM users u
-      LEFT JOIN chat_messages m ON (u.id = m.sender_id OR u.id = m.receiver_id)
+      LEFT JOIN (
+        SELECT m1.*
+        FROM chat_messages m1
+        INNER JOIN (
+          SELECT 
+            CASE 
+              WHEN sender_id = ? THEN receiver_id
+              ELSE sender_id
+            END AS user_id,
+            MAX(created_at) AS max_time
+          FROM chat_messages
+          WHERE sender_id = ? OR receiver_id = ?
+          GROUP BY user_id
+        ) x
+          ON (
+            (m1.sender_id = x.user_id OR m1.receiver_id = x.user_id)
+            AND m1.created_at = x.max_time
+          )
+      ) lm ON u.id = lm.sender_id OR u.id = lm.receiver_id
       WHERE u.role = 'user'
-      GROUP BY u.id
-      ORDER BY lastMessageTime DESC
-    `, [adminId]);
+      ORDER BY lm.created_at DESC
+    `, [adminId, adminId, adminId, adminId]);
 
     res.json(rows);
   } catch (err) {

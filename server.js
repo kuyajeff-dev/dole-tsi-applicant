@@ -15,7 +15,6 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: { origin: "*", methods: ["GET", "POST"] }
 });
-// Initialize socket handler
 socketHandler(io);
 
 // ------------------ UPLOADS ------------------
@@ -50,6 +49,9 @@ app.use('/pdfs', express.static(path.join(__dirname, 'pdfs')));
 app.use('/tsi-applicant', express.static(path.join(__dirname, 'tsi-applicant')));
 app.use('/admin', express.static(path.join(__dirname, 'admin')));
 app.use('/sounds', express.static(path.join(__dirname, 'sounds')));
+
+// ------------------ REDIRECT ROOT ------------------
+app.get("/", (req, res) => res.redirect("/tsi-applicant/"));
 
 // ------------------ AUTH MIDDLEWARE ------------------
 function requireUserLogin(req, res, next) {
@@ -96,7 +98,7 @@ app.get('/tsi-applicant/logout', (req, res) => {
 const userValidPages = ['index', 'form', 'contact'];
 app.get('/tsi-applicant/pages/:page', requireUserLogin, (req, res) => {
     const page = req.params.page;
-    if (!userValidPages.includes(page)) return res.status(404).send('Page not found');
+    if (!userValidPages.includes(page)) return res.status(404).sendFile(path.join(__dirname, 'tsi-applicant/offline.html'));
     res.sendFile(path.join(__dirname, `tsi-applicant/pages/${page}.html`));
 });
 

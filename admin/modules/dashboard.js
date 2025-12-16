@@ -86,25 +86,44 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* -----------------------------------------------
      6) UPDATE NOTES DISPLAY
   ------------------------------------------------ */
-  function updateNotesDisplay(_, dateStr) {
-    const container = document.getElementById('dateNotes');
-    container.innerHTML = "";
+function updateNotesDisplay(_, dateStr) {
+  const container = document.getElementById('dateNotes');
+  container.innerHTML = "";
 
-    if (notesData[dateStr] && notesData[dateStr].length) {
-      notesData[dateStr].forEach(note => {
-        const p = document.createElement('p');
-        p.className = "mb-2 text-gray-700";
-        p.innerHTML = `
-          - <strong>${note.applicant_establishment}</strong><br>
-          <em>${note.equipment_location} - ${note.equipment}</em><br>
-          <strong>By ${note.evaluated_by}:</strong> ${note.remarks}
-        `;
-        container.appendChild(p);
-      });
-    } else {
-      container.innerHTML = `<p class="text-gray-400">No notes for this date.</p>`;
-    }
+  const notes = notesData[dateStr];
+  if (notes && notes.length) {
+    notes.forEach((note, index) => {
+      const p = document.createElement('p');
+      p.className = "mb-2 text-gray-700";
+
+      // Handle equipment as JSON
+      let equipmentList = '-';
+      if (note.equipment) {
+        try {
+          let equipmentArray = [];
+          if (typeof note.equipment === "string") {
+            equipmentArray = JSON.parse(note.equipment); // parse JSON string
+          } else if (Array.isArray(note.equipment)) {
+            equipmentArray = note.equipment;
+          }
+          equipmentList = equipmentArray.length ? equipmentArray.join(", ") : '-';
+        } catch {
+          // fallback if not valid JSON
+          equipmentList = note.equipment;
+        }
+      }
+
+      p.innerHTML = `
+        ${index + 1}. <strong>${note.applicant_establishment}</strong><br>
+        <em>${note.equipment_location} - ${equipmentList}</em><br>
+        <strong>By ${note.evaluated_by}:</strong> ${note.remarks}
+      `;
+      container.appendChild(p);
+    });
+  } else {
+    container.innerHTML = `<p class="text-gray-400">No notes for this date.</p>`;
   }
+}
 
   /* -----------------------------------------------
      7) FLATPICKR CALENDAR + HIGHLIGHT NOTES

@@ -11,12 +11,18 @@ class Plan {
         return rows;
     }
 
-    static async getAll(){
+    static async getAll() {
         const [rows] = await pool.query(`
             SELECT cs.*, u.full_name AS applicant_name
             FROM checklist_submissions cs
             LEFT JOIN users u ON cs.user_id = u.id
-            ORDER BY cs.created_at DESC
+            ORDER BY 
+                CASE 
+                    WHEN cs.status = 'pending' THEN 0
+                    WHEN cs.status = 'rejected' THEN 1
+                    ELSE 2
+                END,
+                cs.created_at DESC
         `);
         return rows;
     }

@@ -45,17 +45,22 @@ exports.loginUser = async (req, res) => {
             return res.status(400).json({ message: 'Invalid email or password' });
         }
 
+        // 🔒 Block admin access to user dashboard
+        if (user.role && user.role.toLowerCase() === 'admin') {
+            return res.status(403).json({ message: 'Admins cannot log in here' });
+        }
+
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(400).json({ message: 'Invalid email or password' });
         }
 
-        // IMPORTANT: USER SESSION ONLY
+        // User session
         req.session.user = {
             id: user.id,
             full_name: user.full_name,
             email: user.email,
-            role: "user",                     // 🔥 enforce user role
+            role: "user", // enforce role
             avatar: user.avatar || null
         };
 
@@ -73,4 +78,3 @@ exports.loginUser = async (req, res) => {
         });
     }
 };
-

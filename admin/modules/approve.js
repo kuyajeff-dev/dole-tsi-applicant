@@ -53,10 +53,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     `;
   }
 
-  // --- Table logic ---
+  // --- Table logic with pagination ---
   let currentStatus = 'approved';
+  let currentPage = 1;
+  const rowsPerPage = 5;
+
   const tableBody = document.getElementById('plansCardContainerTable');
   const statusTitle = document.getElementById('currentStatusTitle');
+
+  let currentData = [];
 
   async function fetchTableData(status) {
     try {
@@ -69,17 +74,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  async function renderTable(status) {
+  function renderTablePage(data, page) {
     tableBody.innerHTML = '';
-    statusTitle.textContent = status.charAt(0).toUpperCase() + status.slice(1) + " Applications";
+    const startIndex = (page - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    const pageData = data.slice(startIndex, endIndex);
 
-    const data = await fetchTableData(status);
-    if (data.length === 0) {
+    if (pageData.length === 0) {
       tableBody.innerHTML = `<tr><td colspan="7" class="text-center px-4 py-2 text-gray-500">No records found.</td></tr>`;
       return;
     }
 
-    data.forEach((row, index) => {
+    pageData.forEach((row, index) => {
       let equipmentArray = [];
       if (row.equipment) {
         if (Array.isArray(row.equipment)) equipmentArray = row.equipment;
@@ -97,7 +103,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const tr = document.createElement('tr');
       tr.className = "border-b hover:bg-gray-50";
       tr.innerHTML = `
-        <td class="px-4 py-2">${index + 1}</td>
+        <td class="px-4 py-2">${startIndex + index + 1}</td>
         <td class="px-4 py-2">${row.applicant_establishment || '-'}</td>
         <td class="px-4 py-2">${row.equipment_location || '-'}</td>
         <td class="px-4 py-2">${row.total_units || '-'}</td>
@@ -112,6 +118,58 @@ document.addEventListener("DOMContentLoaded", async () => {
       `;
       tableBody.appendChild(tr);
     });
+
+    renderPaginationControls(data.length, page);
+  }
+
+  function renderPaginationControls(totalRows, page) {
+    const pagination = document.getElementById('paginationControls');
+    pagination.innerHTML = ''; // clear previous controls
+
+    if (totalRows <= rowsPerPage) return;
+
+    const totalPages = Math.ceil(totalRows / rowsPerPage);
+
+    // Previous button
+    const prevBtn = document.createElement('button');
+    prevBtn.textContent = 'Previous';
+    prevBtn.className = 'px-3 py-1 bg-gray-200 rounded hover:bg-gray-300';
+    prevBtn.disabled = page === 1;
+    prevBtn.addEventListener('click', () => {
+      currentPage--;
+      renderTablePage(currentData, currentPage);
+    });
+    pagination.appendChild(prevBtn);
+
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+      const pageBtn = document.createElement('button');
+      pageBtn.textContent = i;
+      pageBtn.className = `px-3 py-1 rounded ${i === page ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'}`;
+      pageBtn.addEventListener('click', () => {
+        currentPage = i;
+        renderTablePage(currentData, currentPage);
+      });
+      pagination.appendChild(pageBtn);
+    }
+
+    // Next button
+    const nextBtn = document.createElement('button');
+    nextBtn.textContent = 'Next';
+    nextBtn.className = 'px-3 py-1 bg-gray-200 rounded hover:bg-gray-300';
+    nextBtn.disabled = page === totalPages;
+    nextBtn.addEventListener('click', () => {
+      currentPage++;
+      renderTablePage(currentData, currentPage);
+    });
+    pagination.appendChild(nextBtn);
+  }
+
+  async function renderTable(status) {
+    statusTitle.textContent = status.charAt(0).toUpperCase() + status.slice(1) + " Applications";
+    currentData = await fetchTableData(status);
+    currentPage = 1;
+    renderTablePage(currentData, currentPage);
   }
 
   // --- Tab click events ---
@@ -125,15 +183,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
 
       switch (currentStatus) {
-        case 'approved':
-          tab.classList.add('bg-green-600', 'text-white');
-          break;
-        case 'pending':
-          tab.classList.add('bg-yellow-300', 'text-white');
-          break;
-        case 'rejected':
-          tab.classList.add('bg-red-300', 'text-white');
-          break;
+        case 'approved': tab.classList.add('bg-green-600', 'text-white'); break;
+        case 'pending': tab.classList.add('bg-yellow-300', 'text-white'); break;
+        case 'rejected': tab.classList.add('bg-red-300', 'text-white'); break;
       }
     });
   });
@@ -145,12 +197,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   const searchInput = document.getElementById('searchPlans');
   searchInput.addEventListener('input', () => {
     const query = searchInput.value.toLowerCase();
-    const rows = tableBody.querySelectorAll('tr');
-    rows.forEach(row => {
-      const cells = row.querySelectorAll('td');
-      const rowText = Array.from(cells).map(td => td.textContent.toLowerCase()).join(' ');
-      row.style.display = rowText.includes(query) ? '' : 'none';
+    const filteredData = currentData.filter(row => {
+      const rowText = `${row.applicant_establishment} ${row.equipment_location} ${row.total_units} ${row.equipment}`.toLowerCase();
+      return rowText.includes(query);
     });
+    currentPage = 1;
+    renderTablePage(filteredData, currentPage);
   });
 
 });

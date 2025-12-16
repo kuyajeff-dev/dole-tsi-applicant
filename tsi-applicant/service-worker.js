@@ -61,9 +61,15 @@ self.addEventListener("activate", event => {
 // Fetch: network-first for user pages, cache-first for static assets
 // ---------------------------
 self.addEventListener("fetch", event => {
-  const reqUrl = new URL(event.request.url);
+  const req = event.request;
 
-  if (event.request.method !== "GET") return;
+  // Only handle GET requests
+  if (req.method !== "GET") return;
+
+  const reqUrl = new URL(req.url);
+
+  // Skip unsupported schemes
+  if (!reqUrl.protocol.startsWith("http")) return;
 
   // ----------------- User pages (network-first) -----------------
   if (
@@ -75,14 +81,12 @@ self.addEventListener("fetch", event => {
     event.respondWith(
       (async () => {
         try {
-          const networkRes = await fetch(event.request);
-          const resClone = networkRes.clone();
+          const networkRes = await fetch(req);
           const cache = await caches.open(CACHE_NAME);
-          cache.put(event.request, resClone);
+          cache.put(req, networkRes.clone());
           return networkRes;
         } catch (err) {
-          // Offline fallback
-          const cachedRes = await caches.match(event.request);
+          const cachedRes = await caches.match(req);
           return cachedRes || caches.match("/tsi-applicant/offline.html");
         }
       })()
@@ -99,14 +103,13 @@ self.addEventListener("fetch", event => {
   ) {
     event.respondWith(
       (async () => {
-        const cachedRes = await caches.match(event.request);
+        const cachedRes = await caches.match(req);
         if (cachedRes) return cachedRes;
 
         try {
-          const networkRes = await fetch(event.request);
-          const resClone = networkRes.clone();
+          const networkRes = await fetch(req);
           const cache = await caches.open(CACHE_NAME);
-          cache.put(event.request, resClone);
+          cache.put(req, networkRes.clone());
           return networkRes;
         } catch (err) {
           // Return empty image for images or offline fallback for others
@@ -124,17 +127,18 @@ self.addEventListener("fetch", event => {
   event.respondWith(
     (async () => {
       try {
-        const networkRes = await fetch(event.request);
-        const resClone = networkRes.clone();
+        const networkRes = await fetch(req);
         const cache = await caches.open(CACHE_NAME);
-        cache.put(event.request, resClone);
+        cache.put(req, networkRes.clone());
         return networkRes;
       } catch (err) {
-        const cachedRes = await caches.match(event.request);
+        const cachedRes = await caches.match(req);
         if (cachedRes) return cachedRes;
-        if (event.request.destination === "document") {
+
+        if (req.destination === "document") {
           return caches.match("/tsi-applicant/offline.html");
         }
+
         return new Response("", { status: 504 });
       }
     })()

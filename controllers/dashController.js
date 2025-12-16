@@ -4,18 +4,14 @@ const userModel = require('../models/userModel');
 
 exports.getTotalUserAndStats = async (req, res) => {
     try {
-        // Total plans
         const totalPlansRows = await planModel.getCount();
-        const totalPlans = totalPlansRows[0].total;
+        const totalPlans = totalPlansRows?.[0]?.total || 0;
 
-        // Status counts
-        const pending = (await planModel.getStatus('pending')).length;
-        const rejected = (await planModel.getStatus('rejected')).length;
-        const approved = (await planModel.getStatus('approved')).length;
+        const pending = (await planModel.getStatus('pending'))?.length || 0;
+        const rejected = (await planModel.getStatus('rejected'))?.length || 0;
+        const approved = (await planModel.getStatus('approved'))?.length || 0;
 
-        // Users count
-        const usersRows = await userModel.countUser();
-        const users = usersRows[0].total;
+        const users = await userModel.countUser(); // now safe
 
         res.json({ totalPlans, pending, rejected, approved, users });
     } catch (err) {
@@ -23,6 +19,7 @@ exports.getTotalUserAndStats = async (req, res) => {
         res.status(500).json({ message: 'Failed to fetch stats' });
     }
 };
+
 
 // controllers/dashController.js
 exports.getAllPlanRemarks = async (req, res) => {

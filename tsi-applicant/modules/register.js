@@ -7,15 +7,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const passwordMessage = document.getElementById('passwordMatchMessage');
     const submitBtn = document.getElementById('submitBtn');
     const form = document.getElementById('registerForm');
-    const messageEl = document.getElementById('signupMessage');
 
     // ---------- Avatar Preview ----------
     avatarInput.addEventListener('change', () => {
         const file = avatarInput.files[0];
-        if(file){
+        if (file) {
+            if (!file.type.startsWith('image/')) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid File',
+                    text: 'Avatar must be an image file (png, jpg, jpeg).'
+                });
+                avatarInput.value = '';
+                avatarPreview.src = '';
+                return;
+            }
             avatarPreview.src = URL.createObjectURL(file);
         } else {
-            avatarPreview.src = ''; // reset if no file
+            avatarPreview.src = '';
         }
     });
 
@@ -48,32 +57,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ---------- Live Password Match ----------
     function validatePassword() {
-        if(confirmPassword.value === ''){
+        if (confirmPassword.value === '') {
             passwordMessage.textContent = '';
             submitBtn.disabled = false;
-            return;
+            return true;
         }
 
-        if(password.value === confirmPassword.value){
+        if (password.value === confirmPassword.value) {
             passwordMessage.textContent = 'Passwords match!';
             passwordMessage.className = 'mt-1 text-sm font-medium text-green-600';
             submitBtn.disabled = false;
+            return true;
         } else {
             passwordMessage.textContent = 'Passwords do not match!';
             passwordMessage.className = 'mt-1 text-sm font-medium text-red-600';
             submitBtn.disabled = true;
+            return false;
         }
     }
 
     password.addEventListener('input', validatePassword);
     confirmPassword.addEventListener('input', validatePassword);
 
+    // ---------- Submit form on Enter key ----------
+    form.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (!submitBtn.disabled) {
+                submitBtn.click();
+            }
+        }
+    });
+
     // ---------- Form Submission ----------
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        if (!validatePassword()) return;
+
         const formData = new FormData(form);
 
         try {
+            Swal.fire({
+                title: 'Registering...',
+                text: 'Please wait while we process your registration.',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
             const res = await fetch('/api/register', {
                 method: 'POST',
                 body: formData
@@ -81,24 +112,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await res.json();
 
-            if(res.ok){
-                messageEl.textContent = data.message || 'Registered successfully!';
-                messageEl.className = 'text-sm mt-2 text-green-600';
-
-                // Redirect to index page after 1 second
-                setTimeout(() => {
+            if (res.ok) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Registered Successfully!',
+                    text: data.message || 'Your account has been created.',
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => {
                     window.location.href = '/tsi-applicant/login';
-                }, 1000);
+                });
             } else {
-                messageEl.textContent = data.message || 'Something went wrong!';
-                messageEl.className = 'text-sm mt-2 text-red-600';
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Registration Failed',
+                    text: data.message || 'Something went wrong, please try again.'
+                });
             }
-
         } catch (err) {
             console.error(err);
-            messageEl.textContent = 'Something went wrong!';
-            messageEl.className = 'text-sm mt-2 text-red-600';
+            Swal.fire({
+                icon: 'error',
+                title: 'Server Error',
+                text: 'Something went wrong, please try again later.'
+            });
         }
     });
-
 });

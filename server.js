@@ -1,41 +1,82 @@
 require('dotenv').config();
+
 const express = require('express');
 const http = require('http');
 const path = require('path');
 const fs = require('fs');
 const session = require('express-session');
+const rateLimit = require('express-rate-limit');
+const MySQLStore = require('express-mysql-session')(session);
 const cors = require('cors');
-const { Server } = require("socket.io");
+const { Server } = require('socket.io');
+
 const socketHandler = require('./socketHandler');
 
 const app = express();
 const server = http.createServer(app);
 
-// ------------------ SOCKET.IO ------------------
+/* ---------------------------------------------------
+   TRUST PROXY (required for HTTPS, Nginx, PM2)
+--------------------------------------------------- */
+if (process.env.NODE_ENV === 'production') {
+    app.set('trust proxy', 1);
+}
+
+/* ---------------------------------------------------
+   SOCKET.IO
+--------------------------------------------------- */
 const io = new Server(server, {
-    cors: { origin: "*", methods: ["GET", "POST"] }
+    cors: {
+        origin: process.env.CORS_ORIGIN,
+        credentials: true
+    }
 });
 socketHandler(io);
 
-// ------------------ UPLOADS ------------------
+/* ---------------------------------------------------
+   UPLOADS DIRECTORY (VPS SAFE)
+--------------------------------------------------- */
 const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
 
-// ------------------ MIDDLEWARE ------------------
-app.use(express.json());
+/* ---------------------------------------------------
+   GLOBAL MIDDLEWARE
+--------------------------------------------------- */
+app.use(express.json({ limit: `${process.env.MAX_UPLOAD_MB}mb` }));
 app.use(express.urlencoded({ extended: true }));
 
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3001',
+    origin: process.env.CORS_ORIGIN,
     credentials: true
 }));
+/* ---------------------------------------------------
+   SESSION STORE (MYSQL)
+--------------------------------------------------- */
+const sessionStore = new MySQLStore({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    clearExpired: true,
+    checkExpirationInterval: 900000, // 15 mins
+    expiration: 86400000 // 1 day
+});
 
 app.use(session({
-    secret: "tsi_app_secret_123",
+    name: 'tsi_app_sid',
+    secret: process.env.SESSION_SECRET,
+    store: sessionStore,
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false, httpOnly: true }
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        sameSite: 'lax'
+    }
 }));
+
 
 // Prevent browser caching
 app.use((req, res, next) => {
@@ -43,17 +84,33 @@ app.use((req, res, next) => {
     next();
 });
 
-// ------------------ STATIC FILES ------------------
+/* ---------------------------------------------------
+   RATE LIMITING (SECURITY)
+--------------------------------------------------- */
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // max requests per IP
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
+/* ---------------------------------------------------
+   STATIC FILES
+--------------------------------------------------- */
 app.use('/uploads', express.static(uploadDir));
 app.use('/pdfs', express.static(path.join(__dirname, 'pdfs')));
 app.use('/tsi-applicant', express.static(path.join(__dirname, 'tsi-applicant')));
 app.use('/admin', express.static(path.join(__dirname, 'admin')));
 app.use('/sounds', express.static(path.join(__dirname, 'sounds')));
 
-// ------------------ REDIRECT ROOT ------------------
-app.get("/", (req, res) => res.redirect("/tsi-applicant/"));
+/* ---------------------------------------------------
+   ROOT REDIRECT
+--------------------------------------------------- */
+app.get('/', (req, res) => res.redirect('/tsi-applicant/'));
 
-// ------------------ AUTH MIDDLEWARE ------------------
+/* ---------------------------------------------------
+   AUTH MIDDLEWARE
+--------------------------------------------------- */
 function requireUserLogin(req, res, next) {
     if (!req.session.user || req.session.user.role !== 'user') {
         return res.redirect('/tsi-applicant/login');
@@ -68,9 +125,11 @@ function requireAdminLogin(req, res, next) {
     next();
 }
 
-// ------------------ API ROUTES ------------------
-app.use('/api/register', require('./routes/registerRoutes'));
-app.use('/api/login', require('./routes/loginRoutes'));
+/* ---------------------------------------------------
+   API ROUTES
+--------------------------------------------------- */
+app.use('/api/register', authLimiter, require('./routes/registerRoutes'));
+app.use('/api/login', authLimiter, require('./routes/loginRoutes'));
 app.use('/api/me', require('./routes/loginRoutes'));
 app.use('/api/plans', require('./routes/planRoutes'));
 app.use('/api/admin', require('./routes/adminAuthRoutes'));
@@ -81,56 +140,87 @@ app.use('/api/dashboard', require('./routes/adminDashboardRoutes'));
 app.use('/api/chat', require('./routes/chatRoutes'));
 app.use('/api', require('./routes/chartRoutes'));
 
-// ------------------ USER FRONTEND PAGES ------------------
+/* ---------------------------------------------------
+   USER PAGES
+--------------------------------------------------- */
 app.get('/tsi-applicant/', (req, res) =>
     res.sendFile(path.join(__dirname, 'tsi-applicant/index.html'))
 );
+
 app.get('/tsi-applicant/login', (req, res) =>
     res.sendFile(path.join(__dirname, 'tsi-applicant/login.html'))
 );
+
 app.get('/tsi-applicant/register', (req, res) =>
     res.sendFile(path.join(__dirname, 'tsi-applicant/register.html'))
 );
+
 app.get('/tsi-applicant/logout', (req, res) => {
     delete req.session.user;
     res.redirect('/tsi-applicant/');
 });
+
 const userValidPages = ['index', 'form', 'contact'];
 app.get('/tsi-applicant/pages/:page', requireUserLogin, (req, res) => {
     const page = req.params.page;
-    if (!userValidPages.includes(page)) return res.status(404).sendFile(path.join(__dirname, 'tsi-applicant/offline.html'));
+    if (!userValidPages.includes(page)) {
+        return res.status(404).sendFile(
+            path.join(__dirname, 'tsi-applicant/offline.html')
+        );
+    }
     res.sendFile(path.join(__dirname, `tsi-applicant/pages/${page}.html`));
 });
 
-// ------------------ ADMIN FRONTEND PAGES ------------------
+/* ---------------------------------------------------
+   ADMIN PAGES
+--------------------------------------------------- */
 app.get('/admin/', (req, res) =>
     res.sendFile(path.join(__dirname, 'admin/index.html'))
 );
+
 app.get('/admin/register', (req, res) =>
     res.sendFile(path.join(__dirname, 'admin/register.html'))
 );
+
 app.get('/admin/logout', (req, res) => {
     delete req.session.admin;
     res.redirect('/admin/');
 });
-const adminValidPages = ['index', 'userManagement', 'listApplicant', 'listApprove', 'monthlyRecords', 'viewPlan', 'chat'];
+
+const adminValidPages = [
+    'index',
+    'userManagement',
+    'listApplicant',
+    'listApprove',
+    'monthlyRecords',
+    'viewPlan',
+    'chat'
+];
+
 app.get('/admin/pages/:page', requireAdminLogin, (req, res) => {
     const page = req.params.page;
-    if (!adminValidPages.includes(page)) return res.status(404).send('Page not found');
+    if (!adminValidPages.includes(page)) {
+        return res.status(404).send('Page not found');
+    }
     res.sendFile(path.join(__dirname, `admin/pages/${page}.html`));
 });
 
-// ------------------ GLOBAL ERROR HANDLER ------------------
+/* ---------------------------------------------------
+   GLOBAL ERROR HANDLER
+--------------------------------------------------- */
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    const status = err.statusCode || 500;
-    const message = process.env.NODE_ENV === 'production' && status === 500
-        ? 'An internal server error occurred.'
-        : err.message || 'Unexpected error';
-    res.status(status).json({ message });
+    res.status(err.statusCode || 500).json({
+        message:
+            process.env.NODE_ENV === 'production'
+                ? 'Internal server error'
+                : err.message
+    });
 });
 
-// ------------------ START SERVER ------------------
+/* ---------------------------------------------------
+   START SERVER
+--------------------------------------------------- */
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

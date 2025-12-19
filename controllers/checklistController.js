@@ -21,28 +21,31 @@ const CHECKLIST_ITEMS = [
 exports.generatePDF = async (req, res) => {
   try {
     // ----------------- VALIDATE USER -----------------
-    const currentUser = req.body.user_id || (req.session?.user?.id);
+    const currentUser = req.body.user_id || req.session?.user?.id;
     if (!currentUser) return res.status(401).json({ success: false, message: 'User not logged in' });
 
-    const { applicant_establishment, equipment_location, total_units, remarks, evaluated_by, evaluation_date } = req.body;
+    const { applicant_establishment, equipment_location, total_units, remarks, evaluated_by, evaluation_date, equipment_no } = req.body;
+    const equipmentNoParsed = equipment_no ? JSON.parse(equipment_no) : {};
     const filesArray = req.files || [];
 
     // ----------------- ORGANIZE FILES -----------------
-    const checklistFiles = {};          // Static checklist
+    const checklistFiles = {};               // Static checklist
     const dynamicFiles = { item2: {}, item3: {} }; // Dynamic equipment files
 
     filesArray.forEach(file => {
-      // Only first file per static checklist item
+      // Static checklist files
       if (file.fieldname.startsWith('file_item')) {
         if (!checklistFiles[file.fieldname]) checklistFiles[file.fieldname] = file.path;
       }
 
-      // Dynamic files (all attachments preserved)
+      // Dynamic checklist item2
       if (file.fieldname.startsWith('equipment_item2_')) {
         const key = file.fieldname.replace('equipment_item2_', '');
         if (!dynamicFiles.item2[key]) dynamicFiles.item2[key] = [];
         dynamicFiles.item2[key].push(file.path);
       }
+
+      // Dynamic checklist item3
       if (file.fieldname.startsWith('equipment_item3_')) {
         const key = file.fieldname.replace('equipment_item3_', '');
         if (!dynamicFiles.item3[key]) dynamicFiles.item3[key] = [];
@@ -62,7 +65,8 @@ exports.generatePDF = async (req, res) => {
       applicant_establishment,
       equipment_location,
       total_units,
-      equipment: [], // No equipment saved
+      equipment: [], // Optional: you can store equipment names here
+      equipment_no: equipmentNoParsed,
       checklist_items: checklistItems,
       remarks,
       evaluated_by,
@@ -108,7 +112,7 @@ exports.generatePDF = async (req, res) => {
       .text(`Applicant Establishment: ${applicant_establishment}`, { width: pageWidth, align: 'center' })
       .text(`Location of Equipment: ${equipment_location}`, { width: pageWidth, align: 'center' })
       .text(`Total # of units: ${total_units}`, { width: pageWidth, align: 'center' })
-      .text(`Selected Equipment: None`, { width: pageWidth, align: 'center' });
+      .text(`Selected Equipment: ${Object.keys(equipmentNoParsed).length > 0 ? Object.keys(equipmentNoParsed).join(', ') : 'None'}`, { width: pageWidth, align: 'center' });
     doc.moveDown();
 
     // ----------------- CHECKLIST ITEMS -----------------
@@ -128,44 +132,42 @@ exports.generatePDF = async (req, res) => {
       doc.moveDown();
     });
 
-// ----------------- DYNAMIC EQUIPMENT FILES (SIDE BY SIDE, NO REPEAT) -----------------
-const allDynamicFiles = { ...dynamicFiles.item2, ...dynamicFiles.item3 };
+    // ----------------- DYNAMIC EQUIPMENT FILES -----------------
+    const allDynamicFiles = { ...dynamicFiles.item2, ...dynamicFiles.item3 };
+    Object.keys(allDynamicFiles).forEach(key => {
+      doc.font('Helvetica-Bold').text(`EQUIPMENT - ${key}`, { width: pageWidth, align: 'left' });
 
-Object.keys(allDynamicFiles).forEach(key => {
-  doc.font('Helvetica-Bold').text(`EQUIPMENT - ${key}`, { width: pageWidth, align: 'left' });
+      const filesForKey = allDynamicFiles[key];
+      if (filesForKey && filesForKey.length > 0) {
+        const imagesPerRow = 3;
+        const imageWidth = 150;
+        const padding = 10;
+        let x = doc.page.margins.left;
+        let y = doc.y + 5;
 
-  const filesForKey = allDynamicFiles[key];
-  if (filesForKey && filesForKey.length > 0) {
-    const imagesPerRow = 3;
-    const imageWidth = 150;
-    const padding = 10;
-    let x = doc.page.margins.left;
-    let y = doc.y + 5;
+        filesForKey.forEach((f, index) => {
+          const ext = path.extname(f).toLowerCase();
+          if (['.jpg', '.jpeg', '.png', '.gif'].includes(ext)) {
+            try { doc.image(f, x, y, { width: imageWidth }); } 
+            catch { doc.text(`Could not load image: ${f}`, x, y); }
+          } else {
+            doc.text(`Attached File: ${path.basename(f)}`, x, y);
+          }
 
-    filesForKey.forEach((f, index) => {
-      const ext = path.extname(f).toLowerCase();
-      if (['.jpg', '.jpeg', '.png', '.gif'].includes(ext)) {
-        try { doc.image(f, x, y, { width: imageWidth }); } 
-        catch { doc.text(`Could not load image: ${f}`, x, y); }
+          x += imageWidth + padding;
+          if ((index + 1) % imagesPerRow === 0) {
+            x = doc.page.margins.left;
+            y += 120;
+          }
+        });
+
+        doc.y = y + 120;
       } else {
-        doc.text(`Attached File: ${path.basename(f)}`, x, y);
+        doc.text('No files attached.');
       }
 
-      x += imageWidth + padding;
-      if ((index + 1) % imagesPerRow === 0) {
-        x = doc.page.margins.left;
-        y += 120;
-      }
+      doc.moveDown();
     });
-
-    doc.y = y + 120;
-  } else {
-    doc.text('No files attached.');
-  }
-
-  doc.moveDown();
-});
-
 
     // ----------------- REMARKS & EVALUATION -----------------
     doc.moveDown();

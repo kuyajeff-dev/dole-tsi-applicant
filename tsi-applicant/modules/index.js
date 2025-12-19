@@ -138,6 +138,7 @@ async function loadUser() {
 
         const data = await res.json();
 
+        // ---------- NAVBAR ----------
         const avatarUrl = data.avatar
             ? `/uploads/${data.avatar.replace(/^uploads\//, "")}`
             : `/uploads/default-avatar.png`;
@@ -149,6 +150,15 @@ async function loadUser() {
         if (navAvatar) navAvatar.src = avatarUrl;
         if (navUserName) navUserName.textContent = data.full_name || "User";
         if (welcomeTitle) welcomeTitle.textContent = "Welcome, " + (data.full_name || "User") + "!";
+
+        // ---------- AUTO-FILL ESTABLISHMENT ----------
+        const applicantInput = document.querySelector('input[name="applicant_establishment"]');
+        if (applicantInput) {
+            applicantInput.value = data.establishment || "";    // fill establishment
+            applicantInput.readOnly = true;                     // make read-only
+            applicantInput.classList.add("bg-gray-100", "cursor-not-allowed", "text-center");
+        }
+
     } catch (err) {
         console.error("Failed to load user info", err);
     }

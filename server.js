@@ -192,6 +192,7 @@ const adminValidPages = [
     'index',
     'userManagement',
     'listApplicant',
+    'electricalApplicant',
     'listApprove',
     'monthlyRecords',
     'viewPlan',

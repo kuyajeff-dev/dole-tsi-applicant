@@ -1,5 +1,5 @@
 const path = require('path');
-const userModel = require('../models/userModel')
+const userModel = require('../models/userModel');
 
 exports.getUserSession = (req, res) => {
     const user = req.session.user;
@@ -10,6 +10,7 @@ exports.getUserSession = (req, res) => {
         id: user.id,
         full_name: user.full_name,
         email: user.email,
+        establishment: user.establishment,
         role: "user",
         avatar: user.avatar ? path.basename(user.avatar) : null
     });

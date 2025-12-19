@@ -4,8 +4,8 @@ const Checklist = {
   create: async (data) => {
     const sql = `
       INSERT INTO checklist_submissions
-      (user_id, applicant_establishment, equipment_location, total_units, equipment, checklist_items, pdf_file, remarks, evaluated_by, evaluation_date, created_at, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)
+      (user_id, applicant_establishment, equipment_location, total_units, equipment,equipment_no, checklist_items, pdf_file, remarks, evaluated_by, evaluation_date, created_at, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)
     `;
 
     const values = [
@@ -14,6 +14,7 @@ const Checklist = {
       data.equipment_location,
       data.total_units,
       JSON.stringify(data.equipment),
+      data.equipment_no,
       JSON.stringify(data.checklist_items),
       data.pdf_file || null,       // PDF file name, can be null initially
       data.remarks || null,

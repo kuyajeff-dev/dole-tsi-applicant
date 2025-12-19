@@ -7,10 +7,10 @@ const bcrypt = require('bcrypt');
 
 exports.registerUser = async (req, res) => {
     try {
-        const { full_name, email, password, confirm_password } = req.body;
+        const { full_name, establishment, email, password, confirm_password } = req.body;
         const avatar = req.file ? req.file.filename : null;
 
-        if(!full_name || !email || !password || !confirm_password){
+        if(!full_name || !establishment || !email || !password || !confirm_password){
             return res.status(400).json({ message: 'All fields are required' });
         }
 
@@ -25,7 +25,7 @@ exports.registerUser = async (req, res) => {
             return res.status(400).json({ message: 'Email already registered' });
         }
 
-        const newUser = await userModel.create({ full_name, email, password: passwordHash, avatar });
+        const newUser = await userModel.create({ full_name, email, establishment, password: passwordHash, avatar });
 
         res.status(201).json({ message: 'User registered successfully', user: newUser });
     } catch (err) {
@@ -63,7 +63,8 @@ exports.loginUser = async (req, res) => {
             full_name: user.full_name,
             email: user.email,
             role: "user", // enforce role
-            avatar: user.avatar || null
+            avatar: user.avatar || null,
+            establishment: user.establishment,
         };
 
         return res.json({

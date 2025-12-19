@@ -14,34 +14,37 @@ class userModel {
 
     // Find a user by email
     static async findByEmail(email) {
-        const [rows] = await pool.query('SELECT * FROM users WHERE email = ? LIMIT 1', [email]);
+        const [rows] = await pool.query(
+            'SELECT id, full_name, email, password, avatar, role, establishment FROM users WHERE email = ? LIMIT 1',
+            [email]
+        );
         return rows[0] || null;
     }
 
     // Create user + save backup alternately (with JSON)
-    static async create({ full_name, email, password, avatar, role = 'user' }) {
+    static async create({ full_name, establishment, email, password, avatar, role = 'user' }) {
         const conn = await pool.getConnection();
         try {
             await conn.beginTransaction();
 
             // Insert into main users table
             const [result] = await conn.query(
-                'INSERT INTO users (full_name, email, password, avatar, role, status) VALUES (?, ?, ?, ?, ?, ?)',
-                [full_name, email, password, avatar || null, role, 'active']
+                'INSERT INTO users (full_name, email, password, establishment, avatar, role, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [full_name, email, password, establishment, avatar || null, role, 'active']
             );
 
             const userId = result.insertId;
 
             // Build user object for JSON
-            const userObj = { id: userId, full_name, email, password, avatar, role, status: 'active' };
+            const userObj = { id: userId, full_name, email, password, establishment, avatar, role, status: 'active' };
 
             // Save to backup table (alternating) with JSON
             const backupTable = this.getBackupTable();
             await conn.query(
                 `INSERT INTO ${backupTable} 
-                 (id, full_name, email, password, avatar, role, status, user_data_json, backup_date)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-                [userId, full_name, email, password, avatar || null, role, 'active', JSON.stringify(userObj)]
+                 (id, full_name, email, password, establishment, avatar, role, status, user_data_json, backup_date)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+                [userId, full_name, email, password, establishment, avatar || null, role, 'active', JSON.stringify(userObj)]
             );
 
             await conn.commit();
@@ -69,9 +72,9 @@ class userModel {
             const userObj = { ...current };
             await conn.query(
             `INSERT INTO ${table} 
-            (id, full_name, email, password, avatar, role, status, user_data_json, backup_date)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-            [current.id, current.full_name, current.email, current.password, current.avatar, current.role, current.status, JSON.stringify(userObj)]
+            (id, full_name, email, password, establishment, avatar, role, status, user_data_json, backup_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+            [current.id, current.full_name, current.email, current.password, current.establishment, current.avatar, current.role, current.status, JSON.stringify(userObj)]
             );
         }
 

@@ -111,7 +111,7 @@
     <div class="space-y-3">
       <div class="flex items-center gap-4">
         <label class="font-semibold w-56">Applicant Establishment:</label>
-        <input type="text" name="applicant_establishment" class="border-b flex-1 outline-none" required>
+        <input type="text" id="applicant_establishment" class="border-b flex-1 outline-none" readonly>
       </div>
       <div class="flex items-center gap-4">
         <label class="font-semibold w-56">Location of Equipment:</label>
@@ -129,43 +129,43 @@
       <div class="flex items-center gap-2">
         <input type="checkbox" name="equipment[]" value="Boiler" class="equipment-checkbox">
         <span>Boiler</span>
-        <input type="number" min="1" placeholder="#" class="equipment-count border-b w-16 outline-none hidden text-center">
+        <input type="number" min="1" placeholder="#" class="equipment-count border-b w-16 outline-none hidden text-center" data-equipment="Boiler">
       </div>
 
       <div class="flex items-center gap-2">
         <input type="checkbox" name="equipment[]" value="Pressure vessel" class="equipment-checkbox">
         <span>Pressure vessel</span>
-        <input type="number" min="1" placeholder="#" class="equipment-count border-b w-16 outline-none hidden text-center">
+        <input type="number" min="1" placeholder="#" class="equipment-count border-b w-16 outline-none hidden text-center" data-equipment="Pressure vessel">
       </div>
 
       <div class="flex items-center gap-2">
         <input type="checkbox" name="equipment[]" value="Internal combustion engine" class="equipment-checkbox">
         <span>Internal combustion engine</span>
-        <input type="number" min="1" placeholder="#" class="equipment-count border-b w-16 outline-none hidden text-center">
+        <input type="number" min="1" placeholder="#" class="equipment-count border-b w-16 outline-none hidden text-center" data-equipment="Internal combustion engine">
       </div>
 
       <div class="flex items-center gap-2">
         <input type="checkbox" name="equipment[]" value="Power piping line" class="equipment-checkbox">
         <span>Power piping line</span>
-        <input type="number" min="1" placeholder="#" class="equipment-count border-b w-16 outline-none hidden text-center">
+        <input type="number" min="1" placeholder="#" class="equipment-count border-b w-16 outline-none hidden text-center" data-equipment="Power piping line">
       </div>
 
       <div class="flex items-center gap-2">
         <input type="checkbox" name="equipment[]" value="Crane & hoist equipment" class="equipment-checkbox">
         <span>Crane & hoist equipment</span>
-        <input type="number" min="1" placeholder="#" class="equipment-count border-b w-16 outline-none hidden text-center">
+        <input type="number" min="1" placeholder="#" class="equipment-count border-b w-16 outline-none hidden text-center" data-equipment="Crane & hoist equipment">
       </div>
 
       <div class="flex items-center gap-2">
         <input type="checkbox" name="equipment[]" value="Elevator/manlift/dumbwaiter" class="equipment-checkbox">
         <span>Elevator / manlift / dumbwaiter</span>
-        <input type="number" min="1" placeholder="#" class="equipment-count border-b w-16 outline-none hidden text-center">
+        <input type="number" min="1" placeholder="#" class="equipment-count border-b w-16 outline-none hidden text-center" data-equipment="Elevator/manlift/dumbwaiter">
       </div>
 
       <div class="flex items-center gap-2">
         <input type="checkbox" name="equipment[]" value="Steam/gas/hydro/wind turbine" class="equipment-checkbox">
         <span>Steam / gas / hydro / wind turbine</span>
-        <input type="number" min="1" placeholder="#" class="equipment-count border-b w-16 outline-none hidden text-center">
+        <input type="number" min="1" placeholder="#" class="equipment-count border-b w-16 outline-none hidden text-center" data-equipment="Steam/gas/hydro/wind turbine">
       </div>
 
     </div>

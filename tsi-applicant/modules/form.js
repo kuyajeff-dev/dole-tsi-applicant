@@ -1,16 +1,41 @@
 document.addEventListener('DOMContentLoaded', async () => {
 
-  // ----------------- FETCH LOGGED-IN USER -----------------
   let currentUser = null;
+
+  // ----------------- ELEMENT REFERENCES -----------------
+  const applicantInput = document.getElementById('applicant_establishment'); // <-- use ID
+  const navUserName = document.getElementById('navUserName');
+  const navAvatar = document.getElementById('navAvatar');
+
+  // Show placeholder immediately
+  if (applicantInput) {
+    applicantInput.value = 'Loading...';
+    applicantInput.readOnly = true;
+    applicantInput.classList.add('bg-gray-100', 'cursor-not-allowed', 'text-center');
+  }
+
+  // ----------------- FETCH LOGGED-IN USER -----------------
   try {
-    const res = await fetch('http://localhost:3001/api/user/userOnly', { credentials: 'include' });
+    const res = await fetch('http://localhost:3001/api/user/userOnly', { credentials: 'include', cache: 'no-store' });
     if (!res.ok) throw new Error('Not logged in');
     currentUser = await res.json();
-    const navUserName = document.getElementById('navUserName');
-    const navAvatar = document.getElementById('navAvatar');
+
+    console.log('Current User:', currentUser);
+
+    // Update navbar
     if (navUserName) navUserName.textContent = currentUser.full_name || 'User';
     if (navAvatar) navAvatar.src = currentUser.avatar ? `/uploads/${currentUser.avatar}` : '/uploads/default-avatar.png';
-  } catch (err) { console.warn('Failed to load user info:', err); }
+
+    // Fill establishment instantly
+    if (applicantInput) {
+      applicantInput.value = currentUser.establishment || 'N/A';
+    }
+
+  } catch (err) {
+    console.warn('Failed to load user info:', err);
+    if (applicantInput) applicantInput.value = 'N/A';
+  }
+
 
   // ----------------- MOBILE NAVBAR TOGGLE -----------------
   const mobileMenuButton = document.getElementById('mobileMenuButton');
@@ -154,6 +179,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       try {
         const formData = new FormData(form);
         formData.append('user_id', currentUser.id);
+
+        // ----------------- COLLECT EQUIPMENT NUMBERS -----------------
+        const equipmentNos = {};
+        equipmentCheckboxes.forEach(cb => {
+          const wrapper = cb.closest('div');
+          const countInput = wrapper.querySelector('.equipment-count');
+          if (cb.checked && countInput && countInput.value) {
+            equipmentNos[cb.value] = parseInt(countInput.value);
+          }
+        });
+        formData.append('equipment_no', JSON.stringify(equipmentNos));
 
         // Append static checklist 1–12 files
         for (let i = 1; i <= 12; i++) {

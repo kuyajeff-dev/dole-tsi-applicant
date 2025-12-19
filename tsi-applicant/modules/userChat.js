@@ -38,7 +38,8 @@ async function loadUser() {
         CURRENT_USER = {
             id: data.id,
             full_name: data.full_name,
-            avatar: normalizeAvatarPath(data.avatar)
+            avatar: normalizeAvatarPath(data.avatar),
+            establishment: data.establishment || ""
         };
 
         // Update navbar
@@ -46,6 +47,13 @@ async function loadUser() {
         const navAvatar = document.getElementById("navAvatar");
         if (navUserName) navUserName.textContent = CURRENT_USER.full_name;
         if (navAvatar) navAvatar.src = CURRENT_USER.avatar;
+
+        const applicantInput = document.querySelector('input[name="applicant_establishment"]');
+        if (applicantInput) {
+            applicantInput.value = CURRENT_USER.establishment;
+            applicantInput.readOnly = true;
+            applicantInput.classList.add("bg-gray-100", "cursor-not-allowed", "text-center");
+        }
 
         // Initialize socket connection
         initSocketConnection(CURRENT_USER, handleIncomingMessage);

@@ -1,7 +1,7 @@
 // ----------------------
 // ELEMENTS
 // ----------------------
-const fields = ["full_name", "avatar"];
+const fields = ["full_name", "avatar", "establishment"];
 const editBtn = document.getElementById("editBtn");
 const saveBtn = document.getElementById("saveBtn");
 const cancelBtn = document.getElementById("cancelBtn");

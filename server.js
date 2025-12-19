@@ -139,6 +139,7 @@ app.use('/api/users', require('./routes/fetchRoutes'));
 app.use('/api/dashboard', require('./routes/adminDashboardRoutes'));
 app.use('/api/chat', require('./routes/chatRoutes'));
 app.use('/api', require('./routes/chartRoutes'));
+app.use('/tsi-applicant/api',require('./routes/profileRoutes'));
 
 /* ---------------------------------------------------
    USER PAGES
@@ -160,7 +161,7 @@ app.get('/tsi-applicant/logout', (req, res) => {
     res.redirect('/tsi-applicant/');
 });
 
-const userValidPages = ['index', 'form', 'contact'];
+const userValidPages = ['index', 'mechanicalForm','electricalForm', 'contact','profile'];
 app.get('/tsi-applicant/pages/:page', requireUserLogin, (req, res) => {
     const page = req.params.page;
     if (!userValidPages.includes(page)) {

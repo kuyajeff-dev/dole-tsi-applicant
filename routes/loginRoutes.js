@@ -5,5 +5,8 @@ const registerController = require('../controllers/registerController'); // or l
 
 
 router.post('/', registerController.loginUser);
+router.post('/forgot-password', registerController.forgotPassword);
+router.post('/verify-temp-password', registerController.verifyTempPassword); 
+router.put('/reset-password', registerController.resetPassword);
 
 module.exports = router;

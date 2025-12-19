@@ -56,36 +56,45 @@ document.addEventListener('DOMContentLoaded', () => {
     setupToggle('confirm_password', 'toggleConfirmPassword', 'eyeConfirmIcon');
 
     // ---------- Live Password Match ----------
-    function validatePassword() {
-        if (confirmPassword.value === '') {
+    function validatePassword(showRedOnlyOnBlur = false) {
+        const pwd = password.value;
+        const confirm = confirmPassword.value;
+
+        // If confirm is empty, hide any message
+        if (!confirm) {
             passwordMessage.textContent = '';
             submitBtn.disabled = false;
             return true;
         }
 
-        if (password.value === confirmPassword.value) {
+        if (pwd === confirm) {
             passwordMessage.textContent = 'Passwords match!';
             passwordMessage.className = 'mt-1 text-sm font-medium text-green-600';
             submitBtn.disabled = false;
             return true;
         } else {
-            passwordMessage.textContent = 'Passwords do not match!';
-            passwordMessage.className = 'mt-1 text-sm font-medium text-red-600';
+            if (!showRedOnlyOnBlur) {
+                // Only show green live feedback while typing
+                passwordMessage.textContent = '';
+            } else {
+                passwordMessage.textContent = 'Passwords do not match!';
+                passwordMessage.className = 'mt-1 text-sm font-medium text-red-600';
+            }
             submitBtn.disabled = true;
             return false;
         }
     }
 
-    password.addEventListener('input', validatePassword);
-    confirmPassword.addEventListener('input', validatePassword);
+    // Live feedback for password field
+    password.addEventListener('input', () => validatePassword(false));
+    // Red warning only appears when confirm password loses focus
+    confirmPassword.addEventListener('blur', () => validatePassword(true));
 
     // ---------- Submit form on Enter key ----------
     form.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            if (!submitBtn.disabled) {
-                submitBtn.click();
-            }
+            if (!submitBtn.disabled) submitBtn.click();
         }
     });
 
@@ -93,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        if (!validatePassword()) return;
+        if (!validatePassword(true)) return; // final check before submit
 
         const formData = new FormData(form);
 

@@ -1,4 +1,6 @@
 const Plan = require('../models/planModel');
+const pool = require('../db/mysql');
+const transporter = require('../config/nodemailer');
 
 exports.getAllPlans = async (req, res) => {
     try {
@@ -62,20 +64,55 @@ exports.updateApplicant = async (req, res) => {
 };
 
 exports.updateApplicantStatus = async (req, res) => {
-    try{
-        if (!req.session.admin || req.session.admin.role !== 'admin') {
-            return res.status(401).json({ error: "Unauthorized. Admin only." });
-        }
-
-        const id = req.params.id;
-        const {status} = req.body;
-        const result = await Plan.UpdateStatus(id, status);
-
-        res.json({success: true, updated: result});
-    } catch (err) {
-        console.error("Failed to update applicant plan status:", err);
-        res.status(500).json({ message: "Failed to update applicant plan status" });
+  try {
+    if (!req.session.admin || req.session.admin.role !== 'admin') {
+      return res.status(401).json({ error: "Unauthorized. Admin only." });
     }
+
+    const id = req.params.id;
+    const { status } = req.body;
+
+    // Update status in DB
+    const result = await Plan.UpdateStatus(id, status);
+
+    // Fetch user email and name for notification
+    const [planRows] = await pool.query(
+      `SELECT u.email, u.full_name, cs.applicant_establishment 
+       FROM checklist_submissions cs 
+       LEFT JOIN users u ON cs.user_id = u.id 
+       WHERE cs.id = ?`,
+      [id]
+    );
+
+    if (planRows.length > 0) {
+      const user = planRows[0];
+
+      if (['approved', 'rejected'].includes(status.toLowerCase())) {
+        // Send email notification using pre-configured transporter
+        const mailOptions = {
+          from: `"TSI Applicant System" <${process.env.GMAIL_USER}>`,
+          to: [user.email, ...(process.env.ADMIN_EMAILS || '').split(',')],
+          subject: `Your application has been ${status}`,
+          html: `
+            <p>Hello ${user.full_name},</p>
+            <p>Your application for <strong>${user.applicant_establishment}</strong> has been <strong>${status}</strong>.</p>
+            <p>Thank you for using our system.</p>
+          `
+        };
+
+        transporter.sendMail(mailOptions, (err, info) => {
+          if (err) console.error("Email error:", err);
+          else console.log("Email sent:", info.response);
+        });
+      }
+    }
+
+    res.json({ success: true, updated: result });
+
+  } catch (err) {
+    console.error("Failed to update applicant plan status:", err);
+    res.status(500).json({ message: "Failed to update applicant plan status" });
+  }
 };
 
 exports.getApprovalsByStatus = async (req, res) => {

@@ -8,7 +8,7 @@
     <meta name="Jeffrey C. Igot" content="For goverment only">
     <link rel="shortcut icon" href="./public/images/image(1).png" type="image/x-icon">
     <!-- PWA Manifest -->
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="/tsi-applicant/manifest.json">
     <meta name="theme-color" content="#2563eb">
     <link rel="apple-touch-icon" href="./public/images/image(1).png">
 
@@ -96,6 +96,23 @@
     </div>
 
 </body>
+<style>
+    @keyframes slide-up {
+  from {
+    transform: translate(-50%, 100%);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.35s ease-out;
+}
+
+</style>
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/tsi-applicant/service-worker.js').then(reg => {
@@ -122,24 +139,94 @@ if ('serviceWorker' in navigator) {
 }
 
 
-// Optional: Install button prompt
+/* =========================================================
+   PWA INSTALL PROMPT — PROFESSIONAL UI
+========================================================= */
+
 let deferredPrompt;
-window.addEventListener('beforeinstallprompt', e => {
+let installUIShown = false;
+
+window.addEventListener("beforeinstallprompt", e => {
   e.preventDefault();
   deferredPrompt = e;
-  const installBtn = document.createElement('button');
-  installBtn.id = "installBtn";
-  installBtn.textContent = "Install App";
-  installBtn.className = "fixed bottom-4 right-4 px-4 py-2 bg-blue-600 text-white rounded-lg";
-  document.body.appendChild(installBtn);
 
-  installBtn.addEventListener('click', async () => {
-    installBtn.style.display = 'none';
+  if (installUIShown) return;
+  installUIShown = true;
+
+  // Container
+  const container = document.createElement("div");
+  container.id = "pwaInstallCard";
+  container.className = `
+    fixed bottom-4 left-1/2 -translate-x-1/2
+    bg-white shadow-2xl rounded-xl
+    w-[90%] max-w-md
+    flex items-center gap-4
+    p-4 z-50
+    animate-slide-up
+  `;
+
+  // App icon
+  const icon = document.createElement("img");
+  icon.src = "./public/images/image(1).png";
+  icon.alt = "App Icon";
+  icon.className = "w-12 h-12 rounded-lg border";
+
+  // Text
+  const textWrap = document.createElement("div");
+  textWrap.className = "flex-1";
+
+  const title = document.createElement("h3");
+  title.textContent = "Install TSI Applicant System";
+  title.className = "font-semibold text-gray-800 text-sm";
+
+  const subtitle = document.createElement("p");
+  subtitle.textContent = "Get faster access and online support";
+  subtitle.className = "text-xs text-gray-500";
+
+  textWrap.append(title, subtitle);
+
+  // Install button
+  const installBtn = document.createElement("button");
+  installBtn.textContent = "Install";
+  installBtn.className = `
+    bg-blue-600 hover:bg-blue-700
+    text-white text-sm font-medium
+    px-4 py-2 rounded-lg
+    transition
+  `;
+
+  // Close button
+  const closeBtn = document.createElement("button");
+  closeBtn.innerHTML = "✕";
+  closeBtn.className = `
+    absolute top-2 right-2
+    text-gray-400 hover:text-gray-600
+    text-sm
+  `;
+
+  // Actions
+  installBtn.addEventListener("click", async () => {
+    container.remove();
     deferredPrompt.prompt();
-    const choice = await deferredPrompt.userChoice;
-    console.log('PWA install choice:', choice.outcome);
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log("[PWA] Install choice:", outcome);
     deferredPrompt = null;
   });
+
+  closeBtn.addEventListener("click", () => {
+    container.remove();
+  });
+
+  container.append(icon, textWrap, installBtn, closeBtn);
+  document.body.appendChild(container);
+});
+
+/* =========================================================
+   OPTIONAL: HIDE INSTALL UI AFTER INSTALLED
+========================================================= */
+window.addEventListener("appinstalled", () => {
+  console.log("[PWA] App installed");
+  document.getElementById("pwaInstallCard")?.remove();
 });
 </script>
 

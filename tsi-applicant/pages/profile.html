@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>User Profile</title>
+<link rel="shortcut icon" href="../public/images/image(1).png" type="image/x-icon">
+<script src="../assets/tailwindcss.js"></script>
+</head>
+
+<body class="bg-gray-100 font-sans">
+
+<!-- NAVBAR -->
+<nav class="bg-blue-700 text-white shadow-lg">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between h-16 items-center">
+      <!-- Logo / Title -->
+      <div class="flex-shrink-0 font-bold text-lg">
+        DOLE - Mechanical Plans
+      </div>
+
+      <!-- Desktop Menu -->
+      <div class="hidden md:flex items-center space-x-4">
+        <a href="/tsi-applicant/pages/index" class="hover:bg-blue-800 px-3 py-2 rounded">Home</a>
+        
+        <!-- Checklist Forms Dropdown -->
+        <div class="relative group">
+          <button class="flex items-center space-x-2 hover:bg-blue-800 px-3 py-2 rounded">
+            Checklist Forms
+            <svg class="w-4 h-4 ml-1 transform transition-transform duration-200 group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <ul class="absolute left-0 mt-2 w-48 bg-white text-black rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
+            <li><a href="/tsi-applicant/pages/mechanicalForm" class="block py-2 px-4 hover:bg-blue-50">Mechanical Form</a></li>
+            <li><a href="/tsi-applicant/pages/electricalForm" class="block py-2 px-4 hover:bg-blue-50">Electrical Form</a></li>
+          </ul>
+        </div>
+
+        <a href="/tsi-applicant/pages/contact" class="hover:bg-blue-800 px-3 py-2 rounded">Contact</a>
+
+        <!-- User Profile -->
+        <div class="relative group">
+          <button class="flex items-center space-x-2 hover:bg-blue-800 px-3 py-2 rounded">
+            <span id="navUserName"></span>
+            <img id="navAvatar" src="" class="w-8 h-8 rounded-full border-2 border-white" alt="avatar">
+          </button>
+          <div class="absolute right-0 mt-2 w-40 bg-white text-black rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+            <a href="/tsi-applicant/pages/profile" class="block px-4 py-2 hover:bg-gray-100">Profile</a>
+            <a href="/tsi-applicant/logout" class="block px-4 py-2 hover:bg-gray-100 text-red-600">Logout</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Menu Button -->
+      <div class="md:hidden flex items-center">
+        <button id="mobileMenuButton" class="focus:outline-none">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Menu -->
+  <div id="mobileMenu" class="md:hidden hidden bg-blue-700 text-white">
+    <a href="/tsi-applicant/pages/index" class="block px-4 py-2 hover:bg-blue-800">Home</a>
+
+    <!-- Checklist Forms for Mobile -->
+    <div class="pl-4">
+      <p class="text-gray-200 font-semibold mt-2">Checklist Forms</p>
+      <a href="/tsi-applicant/pages/mechanicalForm" class="block px-4 py-2 hover:bg-blue-800">Mechanical Form</a>
+      <a href="/tsi-applicant/pages/electricalForm" class="block px-4 py-2 hover:bg-blue-800">Electrical Form</a>
+    </div>
+
+    <a href="/tsi-applicant/pages/contact" class="block px-4 py-2 hover:bg-blue-800">Contact</a>
+    <a href="/tsi-applicant/pages/profile" class="block px-4 py-2 hover:bg-blue-800">Profile</a>
+    <a href="/tsi-applicant/logout" class="block px-4 py-2 hover:bg-blue-800 text-red-300">Logout</a>
+  </div>
+</nav>
+
+<!-- PROFILE CARD -->
+<div class="max-w-3xl mx-auto mt-10 bg-white shadow rounded-lg p-6">
+
+  <!-- Header -->
+  <div class="flex items-center space-x-6 mb-6">
+    <img id="profileAvatar" class="w-24 h-24 rounded-full border">
+    <div>
+      <h2 id="profileName" class="text-2xl font-semibold"></h2>
+      <p id="profileEmail" class="text-gray-600"></p>
+    </div>
+  </div>
+
+  <!-- PROFILE FORM -->
+  <form class="space-y-4">
+    <div>
+      <label class="text-sm font-medium">Full Name</label>
+      <input id="full_name" disabled class="input">
+    </div>
+
+    <div>
+      <label class="text-sm font-medium">Email</label>
+      <input id="email" disabled class="input bg-gray-100">
+    </div>
+
+    <div>
+      <label class="text-sm font-medium">Avatar URL</label>
+      <input id="avatar" disabled class="input">
+    </div>
+  </form>
+
+  <!-- PROFILE BUTTONS -->
+  <div class="flex justify-end mt-6 space-x-3">
+    <button type="button" id="editBtn" class="btn-blue">Edit</button>
+    <button type="button" id="saveBtn" class="btn-green hidden">Save</button>
+    <button type="button" id="cancelBtn" class="btn-gray hidden">Cancel</button>
+  </div>
+
+    <!-- CHANGE PASSWORD -->
+    <div class="mt-10 border-t pt-6">
+    <h3 class="text-lg font-semibold mb-4">Change Password</h3>
+
+    <div class="space-y-4">
+        <!-- Step 1: Enter current password -->
+        <input id="currentPassword" type="password" placeholder="Current Password" class="input">
+        <button type="button" id="verifyCurrentBtn" class="btn-blue w-full">Verify Current Password</button>
+
+        <!-- Step 2: New password fields (hidden initially) -->
+        <div id="newPasswordFields" class="hidden space-y-2">
+        <input id="newPassword" type="password" placeholder="New Password" class="input">
+        <input id="confirmPassword" type="password" placeholder="Re-type New Password" class="input">
+        <button type="button" id="changePasswordBtn" class="btn-blue w-full">Update Password</button>
+        </div>
+
+        <div id="passwordStatus" class="text-sm mt-2"></div>
+    </div>
+    </div>
+</div>
+
+<style>
+.input {
+  width: 100%;
+  border: 1px solid #ccc;
+  padding: 8px;
+  border-radius: 6px;
+}
+.btn-blue { background:#2563eb;color:white;padding:8px 16px;border-radius:6px; }
+.btn-green { background:#16a34a;color:white;padding:8px 16px;border-radius:6px; }
+.btn-gray { background:#6b7280;color:white;padding:8px 16px;border-radius:6px; }
+</style>
+
+<!-- JS -->
+<script src="../modules/profile.js"></script>
+
+</body>
+</html>

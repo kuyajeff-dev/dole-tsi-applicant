@@ -1,13 +1,17 @@
 import { initSocketConnection, sendMessage } from "./userChatConnection.js";
 import { renderMessageWithTimestamp } from "./userChatUI.js";
 
+// ----------------- CONSTANTS & ELEMENTS -----------------
 let CURRENT_USER = null;
-const ADMIN_ID = 1; // Admin ID, can make dynamic
+const ADMIN_ID = 1; // Admin ID, can make dynamic if needed
 const chatForm = document.getElementById("chatForm");
 const messageInput = document.getElementById("messageInput");
+let unreadAdminMessages = 0; // Track unread messages from admin
 
-// Track unread messages from admin
-let unreadAdminMessages = 0;
+const mobileMenuButton = document.getElementById('mobileMenuButton');
+const mobileMenu = document.getElementById('mobileMenu');
+
+// ----------------- UTILITY FUNCTIONS -----------------
 
 /** Normalize avatar path */
 function normalizeAvatarPath(path) {
@@ -17,21 +21,20 @@ function normalizeAvatarPath(path) {
 
 /** Update document title with unread messages */
 function updateDocumentTitle() {
-    if (unreadAdminMessages > 0) {
-        document.title = `(${unreadAdminMessages}) New message(s) - Chat`;
-    } else {
-        document.title = "Chat with Administrator";
-    }
+    document.title = unreadAdminMessages > 0
+        ? `(${unreadAdminMessages}) New message(s) - Chat`
+        : "Chat with Administrator";
 }
 
-/** Load logged-in user */
+// ----------------- CHAT FUNCTIONS -----------------
+
+/** Load logged-in user and initialize chat */
 async function loadUser() {
     try {
         const res = await fetch("/api/user/userOnly", { credentials: "include" });
         if (!res.ok) throw new Error("User not logged in");
 
         const data = await res.json();
-
         CURRENT_USER = {
             id: data.id,
             full_name: data.full_name,
@@ -44,7 +47,7 @@ async function loadUser() {
         if (navUserName) navUserName.textContent = CURRENT_USER.full_name;
         if (navAvatar) navAvatar.src = CURRENT_USER.avatar;
 
-        // Initialize socket
+        // Initialize socket connection
         initSocketConnection(CURRENT_USER, handleIncomingMessage);
 
         // Load chat history
@@ -55,7 +58,7 @@ async function loadUser() {
     }
 }
 
-/** Load chat history */
+/** Load chat history from server */
 async function loadChatHistory() {
     try {
         const res = await fetch(`/api/chat/history?user_id=${CURRENT_USER.id}&admin_id=${ADMIN_ID}`, { credentials: "include" });
@@ -71,7 +74,7 @@ async function loadChatHistory() {
         updateDocumentTitle();
 
     } catch (err) {
-        console.error(err);
+        console.error("Error loading chat history:", err);
     }
 }
 
@@ -82,41 +85,60 @@ function handleIncomingMessage(msg) {
     msg.avatar = normalizeAvatarPath(msg.avatar);
     renderMessageWithTimestamp(msg, CURRENT_USER.id);
 
-    // Play sound and increment unread counter only for new admin messages
+    // Increment unread counter only for new admin messages
     if (msg.sender_id === ADMIN_ID) {
         unreadAdminMessages++;
         updateDocumentTitle();
     }
 }
 
-/** Handle form submit */
-if (chatForm) {
-    chatForm.addEventListener("submit", e => {
-        e.preventDefault();
-        if (!messageInput.value) return;
+/** Handle sending a new chat message */
+function handleChatSubmit(e) {
+    e.preventDefault();
+    if (!messageInput.value) return;
 
-        const payload = {
-            sender_id: CURRENT_USER.id,
-            receiver_id: ADMIN_ID,
-            message: messageInput.value,
-            avatar: CURRENT_USER.avatar,
-            created_at: new Date().toISOString() // Set timestamp immediately
-        };
-        sendMessage(payload);
+    const payload = {
+        sender_id: CURRENT_USER.id,
+        receiver_id: ADMIN_ID,
+        message: messageInput.value,
+        avatar: CURRENT_USER.avatar,
+        created_at: new Date().toISOString()
+    };
 
-        messageInput.value = "";
+    sendMessage(payload);
+    messageInput.value = "";
 
-        // Reset unread counter
-        unreadAdminMessages = 0;
-        updateDocumentTitle();
+    // Reset unread counter on send
+    unreadAdminMessages = 0;
+    updateDocumentTitle();
+}
+
+// ----------------- MOBILE NAVBAR TOGGLE -----------------
+function initMobileNavbar() {
+    if (!mobileMenuButton || !mobileMenu) return;
+
+    mobileMenuButton.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+    });
+
+    // Close menu when clicking any link
+    mobileMenu.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => mobileMenu.classList.add('hidden'));
     });
 }
 
-// Reset unread counter when window is focused
-window.addEventListener("focus", () => {
-    unreadAdminMessages = 0;
-    updateDocumentTitle();
-});
+// ----------------- EVENT LISTENERS -----------------
+document.addEventListener("DOMContentLoaded", () => {
+    loadUser();           // Load user & initialize chat
+    initMobileNavbar();   // Initialize mobile menu
 
-// Initialize user on page load
-document.addEventListener("DOMContentLoaded", loadUser);
+    if (chatForm) {
+        chatForm.addEventListener("submit", handleChatSubmit);
+    }
+
+    // Reset unread counter when window is focused
+    window.addEventListener("focus", () => {
+        unreadAdminMessages = 0;
+        updateDocumentTitle();
+    });
+});

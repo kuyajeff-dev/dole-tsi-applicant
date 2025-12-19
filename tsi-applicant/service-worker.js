@@ -1,6 +1,11 @@
-const CACHE_NAME = "tsi-cache-v6"; // Increment for new deployments
+/* =========================================================
+   SERVICE WORKER — TSI APPLICANT SYSTEM
+   Safe caching (NO 206 errors)
+========================================================= */
+
+const CACHE_NAME = "tsi-cache-v7"; // ⬅ incremented version
+
 const STATIC_ASSETS = [
-  // Static assets only (cache-first)
   "/tsi-applicant/manifest.json",
 
   // Images
@@ -19,9 +24,22 @@ const STATIC_ASSETS = [
   "/tsi-applicant/offline.html",
 ];
 
-// ---------------------------
-// Install: cache static assets
-// ---------------------------
+/* =========================================================
+   HELPER: SAFE CACHE PUT (prevents 206 crash)
+========================================================= */
+async function safeCachePut(cache, request, response) {
+  if (
+    response &&
+    response.status === 200 &&        // ❗ only full responses
+    response.type === "basic"         // same-origin only
+  ) {
+    await cache.put(request, response.clone());
+  }
+}
+
+/* =========================================================
+   INSTALL — CACHE STATIC ASSETS
+========================================================= */
 self.addEventListener("install", event => {
   console.log("[SW] Installing...");
   event.waitUntil(
@@ -34,44 +52,61 @@ self.addEventListener("install", event => {
           console.warn("[SW] Failed to cache:", asset, err);
         }
       }
-      await self.skipWaiting(); // Activate immediately
+      await self.skipWaiting();
     })()
   );
 });
 
-// ---------------------------
-// Activate: clean up old caches
-// ---------------------------
+/* =========================================================
+   ACTIVATE — CLEAN OLD CACHES
+========================================================= */
 self.addEventListener("activate", event => {
   console.log("[SW] Activating...");
   event.waitUntil(
     (async () => {
       const keys = await caches.keys();
-      await Promise.all(keys.map(key => key !== CACHE_NAME && caches.delete(key)));
+      await Promise.all(
+        keys.map(key => key !== CACHE_NAME && caches.delete(key))
+      );
       await self.clients.claim();
 
-      // Notify clients to reload for new SW
+      // Notify pages
       const clients = await self.clients.matchAll({ type: "window" });
-      clients.forEach(client => client.postMessage({ type: "SW_UPDATED" }));
+      clients.forEach(client =>
+        client.postMessage({ type: "SW_UPDATED" })
+      );
     })()
   );
 });
 
-// ---------------------------
-// Fetch: network-first for user pages, cache-first for static assets
-// ---------------------------
+/* =========================================================
+   FETCH STRATEGY
+========================================================= */
 self.addEventListener("fetch", event => {
   const req = event.request;
 
-  // Only handle GET requests
+  // Only GET requests
   if (req.method !== "GET") return;
 
   const reqUrl = new URL(req.url);
 
-  // Skip unsupported schemes
+  // Skip non-http(s)
   if (!reqUrl.protocol.startsWith("http")) return;
 
-  // ----------------- User pages (network-first) -----------------
+  /* ---------------------------------------------------------
+     ❌ NEVER CACHE THESE (prevents 206 + auth issues)
+  --------------------------------------------------------- */
+  if (
+    reqUrl.pathname.startsWith("/api") ||
+    reqUrl.pathname.startsWith("/uploads") ||
+    reqUrl.pathname.includes("submit-checklist")
+  ) {
+    return;
+  }
+
+  /* ---------------------------------------------------------
+     USER PAGES — NETWORK FIRST
+  --------------------------------------------------------- */
   if (
     reqUrl.pathname.startsWith("/tsi-applicant/pages/") ||
     reqUrl.pathname === "/tsi-applicant/index.html" ||
@@ -83,7 +118,7 @@ self.addEventListener("fetch", event => {
         try {
           const networkRes = await fetch(req);
           const cache = await caches.open(CACHE_NAME);
-          cache.put(req, networkRes.clone());
+          await safeCachePut(cache, req, networkRes);
           return networkRes;
         } catch (err) {
           const cachedRes = await caches.match(req);
@@ -94,7 +129,9 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  // ----------------- Static assets (cache-first) -----------------
+  /* ---------------------------------------------------------
+     STATIC ASSETS — CACHE FIRST
+  --------------------------------------------------------- */
   if (
     reqUrl.pathname.startsWith("/tsi-applicant/modules/") ||
     reqUrl.pathname.startsWith("/tsi-applicant/images/") ||
@@ -109,12 +146,14 @@ self.addEventListener("fetch", event => {
         try {
           const networkRes = await fetch(req);
           const cache = await caches.open(CACHE_NAME);
-          cache.put(req, networkRes.clone());
+          await safeCachePut(cache, req, networkRes);
           return networkRes;
         } catch (err) {
-          // Return empty image for images or offline fallback for others
-          if (reqUrl.pathname.match(/\.(png|jpg|jpeg|gif)$/i)) {
-            return new Response("", { status: 200, headers: { "Content-Type": "image/png" } });
+          if (req.destination === "image") {
+            return new Response("", {
+              status: 200,
+              headers: { "Content-Type": "image/png" }
+            });
           }
           return caches.match("/tsi-applicant/offline.html");
         }
@@ -123,13 +162,15 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  // ----------------- Default: network with fallback -----------------
+  /* ---------------------------------------------------------
+     DEFAULT — NETWORK WITH FALLBACK
+  --------------------------------------------------------- */
   event.respondWith(
     (async () => {
       try {
         const networkRes = await fetch(req);
         const cache = await caches.open(CACHE_NAME);
-        cache.put(req, networkRes.clone());
+        await safeCachePut(cache, req, networkRes);
         return networkRes;
       } catch (err) {
         const cachedRes = await caches.match(req);
@@ -145,9 +186,9 @@ self.addEventListener("fetch", event => {
   );
 });
 
-// ---------------------------
-// Messages from client (skip waiting)
-// ---------------------------
+/* =========================================================
+   MESSAGE HANDLER
+========================================================= */
 self.addEventListener("message", event => {
   if (event.data && event.data.type === "SKIP_WAITING") {
     self.skipWaiting();

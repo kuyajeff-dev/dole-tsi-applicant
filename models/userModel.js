@@ -1,4 +1,5 @@
 const pool = require('../db/mysql');
+const bcrypt = require('bcrypt');
 
 class userModel {
     // Toggle to alternate backups
@@ -57,44 +58,52 @@ class userModel {
     static async update(id, updates) {
         const conn = await pool.getConnection();
         try {
-            await conn.beginTransaction();
+        await conn.beginTransaction();
 
-            // Fetch current user
-            const [rows] = await conn.query('SELECT * FROM users WHERE id = ? LIMIT 1', [id]);
-            if (!rows[0]) throw new Error('User not found');
-            const current = rows[0];
+        const [rows] = await conn.query('SELECT * FROM users WHERE id = ? LIMIT 1', [id]);
+        if (!rows[0]) throw new Error('User not found');
+        const current = rows[0];
 
-            // Save current state to both backup tables
-            for (const table of ['users_backupA', 'users_backupB']) {
-                const userObj = { ...current };
-                await conn.query(
-                    `INSERT INTO ${table} 
-                     (id, full_name, email, password, avatar, role, status, user_data_json, backup_date)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-                    [current.id, current.full_name, current.email, current.password, current.avatar, current.role, current.status, JSON.stringify(userObj)]
-                );
-            }
-
-            // Build dynamic SET clause
-            const fields = [];
-            const values = [];
-            for (const key in updates) {
-                fields.push(`${key} = ?`);
-                values.push(updates[key]);
-            }
-            if (fields.length === 0) throw new Error('No updates provided');
-
-            values.push(id);
-            await conn.query(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, values);
-
-            await conn.commit();
-            return { ...current, ...updates };
-        } catch (err) {
-            await conn.rollback();
-            throw err;
-        } finally {
-            conn.release();
+        // Save current state to backup tables
+        for (const table of ['users_backupA', 'users_backupB']) {
+            const userObj = { ...current };
+            await conn.query(
+            `INSERT INTO ${table} 
+            (id, full_name, email, password, avatar, role, status, user_data_json, backup_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+            [current.id, current.full_name, current.email, current.password, current.avatar, current.role, current.status, JSON.stringify(userObj)]
+            );
         }
+
+        const fields = [];
+        const values = [];
+        for (const key in updates) {
+            fields.push(`${key} = ?`);
+            values.push(updates[key]);
+        }
+        if (fields.length === 0) throw new Error('No updates provided');
+
+        values.push(id);
+        await conn.query(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, values);
+
+        await conn.commit();
+        return { ...current, ...updates };
+        } catch (err) {
+        await conn.rollback();
+        throw err;
+        } finally {
+        conn.release();
+        }
+    }
+
+    // CHANGE PASSWORD by user ID
+    static async changePasswordById(id, newPassword) {
+        const hashed = await bcrypt.hash(newPassword, 10);
+        const [result] = await pool.query(
+        'UPDATE users SET password = ? WHERE id = ?',
+        [hashed, id]
+        );
+        return result.affectedRows > 0;
     }
 
     // Delete user + save deleted state to both backup tables (with JSON)
@@ -166,6 +175,16 @@ class userModel {
 
         return latestJSON ? JSON.parse(latestJSON) : null;
     }
+
+    static async changePassword(email, newPassword) {
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        const [result] = await pool.query(
+        'UPDATE users SET password = ? WHERE email = ?',
+        [hashedPassword, email]
+        );
+        return result.affectedRows > 0;
+    }
+    
 }
 
 module.exports = userModel;

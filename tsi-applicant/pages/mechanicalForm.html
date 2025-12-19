@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dole Applicant Form</title>
+<link rel="shortcut icon" href="../public/images/image(1).png" type="image/x-icon">
+<script src="../assets/tailwindcss.js"></script>
+</head>
+<body class="bg-gray-100">
+
+<!-- NAVBAR -->
+<nav class="bg-blue-700 text-white shadow-lg">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between h-16 items-center">
+      <!-- Logo / Title -->
+      <div class="flex-shrink-0 font-bold text-lg">
+        DOLE - Mechanical Plans
+      </div>
+
+      <!-- Desktop Menu -->
+      <div class="hidden md:flex items-center space-x-4">
+        <a href="/tsi-applicant/pages/index" class="hover:bg-blue-800 px-3 py-2 rounded">Home</a>
+        
+        <!-- Checklist Forms Dropdown -->
+        <div class="relative group">
+          <button class="flex items-center space-x-2 hover:bg-blue-800 px-3 py-2 rounded">
+            Checklist Forms
+            <svg class="w-4 h-4 ml-1 transform transition-transform duration-200 group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <ul class="absolute left-0 mt-2 w-48 bg-white text-black rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
+            <li><a href="/tsi-applicant/pages/mechanicalForm" class="block py-2 px-4 hover:bg-blue-50">Mechanical Form</a></li>
+            <li><a href="/tsi-applicant/pages/electricalForm" class="block py-2 px-4 hover:bg-blue-50">Electrical Form</a></li>
+          </ul>
+        </div>
+
+        <a href="/tsi-applicant/pages/contact" class="hover:bg-blue-800 px-3 py-2 rounded">Contact</a>
+
+        <!-- User Profile -->
+        <div class="relative group">
+          <button class="flex items-center space-x-2 hover:bg-blue-800 px-3 py-2 rounded">
+            <span id="navUserName"></span>
+            <img id="navAvatar" src="" class="w-8 h-8 rounded-full border-2 border-white" alt="avatar">
+          </button>
+          <div class="absolute right-0 mt-2 w-40 bg-white text-black rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+            <a href="/tsi-applicant/pages/profile" class="block px-4 py-2 hover:bg-gray-100">Profile</a>
+            <a href="/tsi-applicant/logout" class="block px-4 py-2 hover:bg-gray-100 text-red-600">Logout</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Menu Button -->
+      <div class="md:hidden flex items-center">
+        <button id="mobileMenuButton" class="focus:outline-none">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Menu -->
+  <div id="mobileMenu" class="md:hidden hidden bg-blue-700 text-white">
+    <a href="/tsi-applicant/pages/index" class="block px-4 py-2 hover:bg-blue-800">Home</a>
+
+    <!-- Checklist Forms for Mobile -->
+    <div class="pl-4">
+      <p class="text-gray-200 font-semibold mt-2">Checklist Forms</p>
+      <a href="/tsi-applicant/pages/mechanicalForm" class="block px-4 py-2 hover:bg-blue-800">Mechanical Form</a>
+      <a href="/tsi-applicant/pages/electricalForm" class="block px-4 py-2 hover:bg-blue-800">Electrical Form</a>
+    </div>
+
+    <a href="/tsi-applicant/pages/contact" class="block px-4 py-2 hover:bg-blue-800">Contact</a>
+    <a href="/tsi-applicant/pages/profile" class="block px-4 py-2 hover:bg-blue-800">Profile</a>
+    <a href="/tsi-applicant/logout" class="block px-4 py-2 hover:bg-blue-800 text-red-300">Logout</a>
+  </div>
+</nav>
+
+<!-- MAIN FORM -->
+<div class="bg-white p-10 max-w-4xl mx-auto shadow-lg mt-6">
+
+  <div class="flex items-center justify-center mb-6">
+    <div class="flex -mr-2">
+        <img src="/tsi-applicant/public/images/logo1.jpg" class="h-16" alt="Logo 1">
+        <img src="/tsi-applicant/public/images/logo2.jfif" class="h-16" alt="Logo 2">
+    </div>
+    <div class="text-center px-2">
+        <p class="font-semibold  text-sm">Republic of the Philippines</p>
+        <h3 class=" font-bold uppercase">Department of Labor and Employment</h3>
+        <p class="text-sm">Regional Office No. VII</p>
+    </div>
+    <div class="flex -ml-2">
+        <img src="/tsi-applicant/public/images/image.png" class="h-16 ml-1" alt="Logo 3">
+        <img src="/tsi-applicant/public/images/image(1).png" class="h-16" alt="Logo 4">
+    </div>
+</div>
+
+  <div class="text-center">
+    <h2 class="mt-4 text-xl font-bold">Checklist for Application of Clearing Mechanical Plan Installation/s</h2>
+    <p class="text-xs italic mt-2">
+      Checklist of requirements in the application for mechanical Installation & mechanical fabrication of industrial facilities effective March 01, 2017.
+    </p>
+  </div>
+
+  <!-- FORM START -->
+  <form id="checklistForm" enctype="multipart/form-data" class="mt-6 space-y-6">
+    <div class="space-y-3">
+      <div class="flex items-center gap-4">
+        <label class="font-semibold w-56">Applicant Establishment:</label>
+        <input type="text" name="applicant_establishment" class="border-b flex-1 outline-none" required>
+      </div>
+      <div class="flex items-center gap-4">
+        <label class="font-semibold w-56">Location of Equipment:</label>
+        <input type="text" name="equipment_location" class="border-b flex-1 outline-none" required>
+      </div>
+      <div class="flex items-center gap-4">
+        <label class="font-semibold w-56">Total # of units:</label>
+        <input type="number" name="total_units" class="border-b w-24 outline-none" required>
+      </div>
+    </div>
+
+    <!-- Equipment -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6 text-sm">
+
+      <div class="flex items-center gap-2">
+        <input type="checkbox" name="equipment[]" value="Boiler" class="equipment-checkbox">
+        <span>Boiler</span>
+        <input type="number" min="1" placeholder="#" class="equipment-count border-b w-16 outline-none hidden text-center">
+      </div>
+
+      <div class="flex items-center gap-2">
+        <input type="checkbox" name="equipment[]" value="Pressure vessel" class="equipment-checkbox">
+        <span>Pressure vessel</span>
+        <input type="number" min="1" placeholder="#" class="equipment-count border-b w-16 outline-none hidden text-center">
+      </div>
+
+      <div class="flex items-center gap-2">
+        <input type="checkbox" name="equipment[]" value="Internal combustion engine" class="equipment-checkbox">
+        <span>Internal combustion engine</span>
+        <input type="number" min="1" placeholder="#" class="equipment-count border-b w-16 outline-none hidden text-center">
+      </div>
+
+      <div class="flex items-center gap-2">
+        <input type="checkbox" name="equipment[]" value="Power piping line" class="equipment-checkbox">
+        <span>Power piping line</span>
+        <input type="number" min="1" placeholder="#" class="equipment-count border-b w-16 outline-none hidden text-center">
+      </div>
+
+      <div class="flex items-center gap-2">
+        <input type="checkbox" name="equipment[]" value="Crane & hoist equipment" class="equipment-checkbox">
+        <span>Crane & hoist equipment</span>
+        <input type="number" min="1" placeholder="#" class="equipment-count border-b w-16 outline-none hidden text-center">
+      </div>
+
+      <div class="flex items-center gap-2">
+        <input type="checkbox" name="equipment[]" value="Elevator/manlift/dumbwaiter" class="equipment-checkbox">
+        <span>Elevator / manlift / dumbwaiter</span>
+        <input type="number" min="1" placeholder="#" class="equipment-count border-b w-16 outline-none hidden text-center">
+      </div>
+
+      <div class="flex items-center gap-2">
+        <input type="checkbox" name="equipment[]" value="Steam/gas/hydro/wind turbine" class="equipment-checkbox">
+        <span>Steam / gas / hydro / wind turbine</span>
+        <input type="number" min="1" placeholder="#" class="equipment-count border-b w-16 outline-none hidden text-center">
+      </div>
+
+    </div>
+
+    <!-- CHECKLIST ITEMS 1–12 -->
+    <div class="flex flex-col gap-2">
+      <label class="flex items-center gap-2">
+        <input type="checkbox" name="check_item1" class="form-checkbox checklist-checkbox" data-file="fileItem1">
+        Request Letter for "clearing of mechanical plans" addressed to Regional Director with contact name & contact number
+      <input type="file" id="fileItem1" name="file_item1" multiple class="mt-1 block w-full border rounded px-2 py-1 hidden">
+      <div id="preview_fileItem1" class="flex flex-wrap gap-2 mt-2"></div>
+    </label>
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <label class="flex items-center gap-2">
+        <input type="checkbox" name="check_item2" class="form-checkbox checklist-checkbox" data-file="fileItem2">
+        Three (3) sets of duly accomplished Application Forms per equipment, signed/sealed by PME and signed by Owner/Manager
+      </label>
+      <input type="file" id="fileItem2" name="file_item2" multiple class="mt-1 block w-full border rounded px-2 py-1 hidden">
+      <div id="preview_fileItem2" class="flex flex-wrap gap-2 mt-2"></div>
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <label class="flex items-center gap-2">
+        <input type="checkbox" name="check_item3" class="form-checkbox checklist-checkbox" data-file="fileItem3">
+        Three (3) sets of Plans/drawings incorporated in the Application Form (A3 size acceptable if legible)
+      </label>
+      <input type="file" id="fileItem3" name="file_item3" multiple class="mt-1 block w-full border rounded px-2 py-1 hidden">
+      <div id="preview_fileItem3" class="flex flex-wrap gap-2 mt-2"></div>
+    </div>
+
+    <!-- DYNAMIC EQUIPMENT CHECKLIST 2 & 3 -->
+    <div id="equipmentChecklistContainer" class="mt-4 space-y-4"></div>
+
+        <div class="flex flex-col gap-2">
+          <label class="flex items-center gap-2">
+            <input type="checkbox" name="check_item4" class="form-checkbox checklist-checkbox" data-file="fileItem4">
+            Location / Site plans / Vicinity Map
+          </label>
+          <input type="file" id="fileItem4" name="file_item4" multiple class="mt-1 block w-full border rounded px-2 py-1 hidden">
+          <div id="preview_fileItem4" class="flex flex-wrap gap-2 mt-2"></div>
+        </div>
+        <div class="flex flex-col gap-2">
+          <label class="flex items-center gap-2">
+            <input type="checkbox" name="check_item5" class="form-checkbox checklist-checkbox" data-file="fileItem5">
+            Room layout / Floor plans / Equipment specifications
+          </label>
+          <input type="file" id="fileItem5" name="file_item5" multiple class="mt-1 block w-full border rounded px-2 py-1 hidden">
+          <div id="preview_fileItem5" class="flex flex-wrap gap-2 mt-2"></div>
+        </div>
+        <div class="flex flex-col gap-2">
+          <label class="flex items-center gap-2">
+            <input type="checkbox" name="check_item6" class="form-checkbox checklist-checkbox" data-file="fileItem6">
+            Installation drawings of equipment showing detailed sections / elevations / foundation construction
+          </label>
+          <input type="file" id="fileItem6" name="file_item6" multiple class="mt-1 block w-full border rounded px-2 py-1 hidden">
+          <div id="preview_fileItem6" class="flex flex-wrap gap-2 mt-2"></div>
+        </div>
+        <div class="flex flex-col gap-2">
+          <label class="flex items-center gap-2">
+            <input type="checkbox" name="check_item7" class="form-checkbox checklist-checkbox" data-file="fileItem7">
+            Foundation design calculation with minimum factor of safety of 5 (Boiler, Pressure Vessel, Turbine, ICE)
+          </label>
+          <input type="file" id="fileItem7" name="file_item7" multiple class="mt-1 block w-full border rounded px-2 py-1 hidden">
+          <div id="preview_fileItem7" class="flex flex-wrap gap-2 mt-2"></div>
+        </div>
+        <div class="flex flex-col gap-2">
+          <label class="flex items-center gap-2">
+            <input type="checkbox" name="check_item8" class="form-checkbox checklist-checkbox" data-file="fileItem8">
+            Mechanical plans/drawings, signed/sealed by PME and signed by Owner/Manager
+          </label>
+          <input type="file" id="fileItem8" name="file_item8" multiple class="mt-1 block w-full border rounded px-2 py-1 hidden">
+          <div id="preview_fileItem8" class="flex flex-wrap gap-2 mt-2"></div>
+        </div>
+        <div class="flex flex-col gap-2">
+          <label class="flex items-center gap-2">
+            <input type="checkbox" name="check_item9" class="form-checkbox checklist-checkbox" data-file="fileItem9">
+            Photocopy of PME's valid PRC ID
+          </label>
+          <input type="file" id="fileItem9" name="file_item9" multiple class="mt-1 block w-full border rounded px-2 py-1 hidden">
+          <div id="preview_fileItem9" class="flex flex-wrap gap-2 mt-2"></div>
+        </div>
+        <div class="flex flex-col gap-2">
+          <label class="flex items-center gap-2">
+            <input type="checkbox" name="check_item10" class="form-checkbox checklist-checkbox" data-file="fileItem10">
+            Photocopy of PME's recent Professional Tax Receipt
+          </label>
+          <input type="file" id="fileItem10" name="file_item10" multiple class="mt-1 block w-full border rounded px-2 py-1 hidden">
+          <div id="preview_fileItem10" class="flex flex-wrap gap-2 mt-2"></div>
+        </div>
+        <div class="flex flex-col gap-2">
+          <label class="flex items-center gap-2">
+            <input type="checkbox" name="check_item11" class="form-checkbox checklist-checkbox" data-file="fileItem11">
+            Photocopy of PME's valid Certificate of Appearance (CA) issued from DOLE
+          </label>
+          <input type="file" id="fileItem11" name="file_item11" multiple class="mt-1 block w-full border rounded px-2 py-1 hidden">
+          <div id="preview_fileItem11" class="flex flex-wrap gap-2 mt-2"></div>
+        </div>
+        <div class="flex flex-col gap-2">
+          <label class="flex items-center gap-2">
+            <input type="checkbox" name="check_item12" class="form-checkbox checklist-checkbox" data-file="fileItem12">
+            One (1) electronic copy of mechanical application in a portable document format (PDF) - if applicable
+          </label>
+          <input type="file" id="fileItem12" name="file_item12" multiple class="mt-1 block w-full border rounded px-2 py-1 hidden">
+          <div id="preview_fileItem12" class="flex flex-wrap gap-2 mt-2"></div>
+        </div>
+
+    <div>
+      <label class="font-semibold">REMARKS:</label>
+      <textarea name="remarks" placeholder="(to be filled-up by TSI-evaluator)"
+        class="border-b w-52 outline-none mt-1 bg-gray-100 cursor-not-allowed text-center
+        placeholder:text-[10px] placeholder:italic placeholder:whitespace-nowrap" rows="1" readonly></textarea>
+    </div>
+
+    <div class="flex justify-between mt-4 gap-4">
+      <div>
+        <label class="font-semibold">Evaluated by:</label>
+        <input type="text" name="evaluated_by" class="border-b w-52 outline-none mt-1 bg-gray-100 cursor-not-allowed" readonly>
+        <p class="text-[10px] italic text-gray-500 mt-2">
+          NOTE:*** Application with incomplete documents will be returned to the applicant
+        </p>
+      </div>
+      <div>
+        <label class="font-semibold">Date of Evaluation:</label>
+        <input type="date" name="evaluation_date" class="border-b w-52 outline-none mt-1 bg-gray-100 cursor-not-allowed" readonly>
+      </div>
+    </div>
+
+    <div class="text-center mt-6">
+      <button type="submit" class="bg-blue-700 text-white px-6 py-2 rounded hover:bg-blue-800">Submit Checklist</button>
+    </div>
+
+  </form>
+</div>
+
+<script src="../assets/sweetalert.js"></script>
+<script type="module" src="../modules/form.js"></script>
+</body>
+</html>

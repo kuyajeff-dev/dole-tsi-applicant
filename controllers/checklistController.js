@@ -1,8 +1,10 @@
+// checklistController.js
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
-const Checklist = require('../models/checklistModel');
+const pool = require('../db/mysql');
 
+// ----------------- CHECKLIST ITEMS -----------------
 const CHECKLIST_ITEMS = [
   "Request Letter for \"clearing of mechanical plans\" addressed to Regional Director with contact name & contact number",
   "Three (3) sets of duly accomplished Application Forms per equipment, signed/sealed by PME and signed by Owner/Manager",
@@ -18,39 +20,68 @@ const CHECKLIST_ITEMS = [
   "One (1) electronic copy of mechanical application in a portable document format (PDF) - if applicable"
 ];
 
+// ----------------- CHECKLIST MODEL -----------------
+const Checklist = {
+  create: async (data) => {
+    const sql = `
+      INSERT INTO checklist_submissions
+      (user_id, applicant_establishment, equipment_location, total_units, equipment, equipment_no, checklist_items, pdf_file, remarks, evaluated_by, evaluation_date, dynamic_check, created_at, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)
+    `;
+
+    const values = [
+      data.user_id,
+      data.applicant_establishment,
+      data.equipment_location,
+      data.total_units,
+      data.equipment,
+      data.equipment_no,
+      JSON.stringify(data.checklist_items),
+      data.pdf_file || null,
+      data.remarks || null,
+      data.evaluated_by || null,
+      data.evaluation_date || null,
+      JSON.stringify(data.dynamic_check || {}), // dynamic_check properly handled
+      data.status || 'pending'                  // status as last value
+    ];
+
+    const [result] = await pool.query(sql, values);
+    return result.insertId;
+  },
+
+  updatePDFPath: async (id, pdfPath) => {
+    const sql = `UPDATE checklist_submissions SET pdf_file = ? WHERE id = ?`;
+    await pool.query(sql, [pdfPath, id]);
+  }
+};
+
+// ----------------- CONTROLLER -----------------
 exports.generatePDF = async (req, res) => {
   try {
-    // ----------------- VALIDATE USER -----------------
     const currentUser = req.body.user_id || req.session?.user?.id;
     if (!currentUser) return res.status(401).json({ success: false, message: 'User not logged in' });
 
-    const { applicant_establishment, equipment_location, total_units, remarks, evaluated_by, evaluation_date, equipment_no } = req.body;
-    const equipmentNoParsed = equipment_no ? JSON.parse(equipment_no) : {};
+    const {
+      applicant_establishment,
+      equipment_location,
+      total_units,
+      remarks,
+      evaluated_by,
+      evaluation_date,
+      equipment,
+      equipment_no
+    } = req.body;
+
     const filesArray = req.files || [];
 
     // ----------------- ORGANIZE FILES -----------------
-    const checklistFiles = {};               // Static checklist
-    const dynamicFiles = { item2: {}, item3: {} }; // Dynamic equipment files
+    const checklistFiles = {};
+    const dynamicFiles = { item2: [], item3: [] };
 
     filesArray.forEach(file => {
-      // Static checklist files
-      if (file.fieldname.startsWith('file_item')) {
-        if (!checklistFiles[file.fieldname]) checklistFiles[file.fieldname] = file.path;
-      }
-
-      // Dynamic checklist item2
-      if (file.fieldname.startsWith('equipment_item2_')) {
-        const key = file.fieldname.replace('equipment_item2_', '');
-        if (!dynamicFiles.item2[key]) dynamicFiles.item2[key] = [];
-        dynamicFiles.item2[key].push(file.path);
-      }
-
-      // Dynamic checklist item3
-      if (file.fieldname.startsWith('equipment_item3_')) {
-        const key = file.fieldname.replace('equipment_item3_', '');
-        if (!dynamicFiles.item3[key]) dynamicFiles.item3[key] = [];
-        dynamicFiles.item3[key].push(file.path);
-      }
+      if (file.fieldname.startsWith('file_item')) checklistFiles[file.fieldname] = file.path;
+      else if (file.fieldname.startsWith('equipment_item2_')) dynamicFiles.item2.push(file.path);
+      else if (file.fieldname.startsWith('equipment_item3_')) dynamicFiles.item3.push(file.path);
     });
 
     // ----------------- PREPARE CHECKLIST ITEMS -----------------
@@ -59,19 +90,27 @@ exports.generatePDF = async (req, res) => {
       file: checklistFiles[`file_item${i + 1}`] || null
     }));
 
+    // ----------------- PREPARE DYNAMIC CHECK -----------------
+    const dynamic_check = {
+      item2: dynamicFiles.item2,
+      item3: dynamicFiles.item3
+    };
+
     // ----------------- SAVE RECORD -----------------
     const insertedId = await Checklist.create({
       user_id: currentUser,
       applicant_establishment,
       equipment_location,
       total_units,
-      equipment: [], // Optional: you can store equipment names here
-      equipment_no: equipmentNoParsed,
+      equipment,
+      equipment_no,
       checklist_items: checklistItems,
+      dynamic_check,
       remarks,
       evaluated_by,
       evaluation_date,
-      pdf_file: null
+      pdf_file: null,
+      status: 'pending'
     });
 
     // ----------------- CREATE PDF -----------------
@@ -80,104 +119,41 @@ exports.generatePDF = async (req, res) => {
 
     const pdfFileName = `Checklist-${Date.now()}.pdf`;
     const pdfPath = path.join(pdfDir, pdfFileName);
-
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
     const stream = fs.createWriteStream(pdfPath);
     doc.pipe(stream);
 
     const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
 
-    // ----------------- LOGOS -----------------
-    const logos = ['logo1.jpg', 'logo2.jfif', 'image.png', 'image(1).png'];
-    let logoX = 50;
-    const logoY = 20;
-    logos.forEach(logo => {
-      const fullPath = path.join(__dirname, '..', 'public', 'images', logo);
-      if (fs.existsSync(fullPath)) {
-        try { doc.image(fullPath, logoX, logoY, { width: 60 }); logoX += 70; } catch {}
-      }
-    });
-
-    // ----------------- HEADER -----------------
-    doc.font('Helvetica').fontSize(10).text('Republic of the Philippines', { width: pageWidth, align: 'center' });
-    doc.font('Helvetica-Bold').fontSize(12).text('Department of Labor and Employment', { width: pageWidth, align: 'center' });
-    doc.font('Helvetica').fontSize(10).text('Regional Office No. VII', { width: pageWidth, align: 'center' });
-    doc.moveDown(2);
-    doc.font('Helvetica-Bold').fontSize(14).text('Checklist for Application of Clearing Mechanical Plan Installation/s', { width: pageWidth, align: 'center' });
-    doc.font('Helvetica-Oblique').fontSize(8).text('Checklist of requirements in the application for mechanical Installation & mechanical fabrication of industrial facilities effective March 01, 2017.', { width: pageWidth, align: 'center' });
+    doc.font('Helvetica-Bold').fontSize(14)
+      .text('Checklist for Application of Clearing Mechanical Plan Installation/s', { width: pageWidth, align: 'center' });
     doc.moveDown(2);
 
-    // ----------------- APPLICANT INFO -----------------
     doc.font('Helvetica').fontSize(11)
       .text(`Applicant Establishment: ${applicant_establishment}`, { width: pageWidth, align: 'center' })
       .text(`Location of Equipment: ${equipment_location}`, { width: pageWidth, align: 'center' })
-      .text(`Total # of units: ${total_units}`, { width: pageWidth, align: 'center' })
-      .text(`Selected Equipment: ${Object.keys(equipmentNoParsed).length > 0 ? Object.keys(equipmentNoParsed).join(', ') : 'None'}`, { width: pageWidth, align: 'center' });
+      .text(`Total # of units: ${equipment_no}`, { width: pageWidth, align: 'center' })
+      .text(`Equipment: ${equipment}`, { width: pageWidth, align: 'center' });
     doc.moveDown();
 
-    // ----------------- CHECKLIST ITEMS -----------------
     checklistItems.forEach((itemObj, index) => {
-      doc.font('Helvetica').fontSize(10).text(`${index + 1}. ${itemObj.item}`, { width: pageWidth, align: 'left' });
-      if (itemObj.file) {
-        const ext = path.extname(itemObj.file).toLowerCase();
-        if (['.jpg', '.jpeg', '.png', '.gif'].includes(ext)) {
-          try { doc.image(itemObj.file, { width: 250 }).moveDown(); } 
-          catch { doc.text(`Could not load image: ${itemObj.file}`); }
-        } else {
-          doc.text(`Attached File: ${path.basename(itemObj.file)}`);
-        }
-      } else {
-        doc.text('No files attached.');
-      }
+      doc.font('Helvetica').fontSize(10)
+        .text(`${index + 1}. ${itemObj.item}`, { width: pageWidth, align: 'left' });
+      if (itemObj.file) doc.text(`Attached File: ${path.basename(itemObj.file)}`);
+      else doc.text('No files attached.');
       doc.moveDown();
     });
 
-    // ----------------- DYNAMIC EQUIPMENT FILES -----------------
-    const allDynamicFiles = { ...dynamicFiles.item2, ...dynamicFiles.item3 };
-    Object.keys(allDynamicFiles).forEach(key => {
-      doc.font('Helvetica-Bold').text(`EQUIPMENT - ${key}`, { width: pageWidth, align: 'left' });
-
-      const filesForKey = allDynamicFiles[key];
-      if (filesForKey && filesForKey.length > 0) {
-        const imagesPerRow = 3;
-        const imageWidth = 150;
-        const padding = 10;
-        let x = doc.page.margins.left;
-        let y = doc.y + 5;
-
-        filesForKey.forEach((f, index) => {
-          const ext = path.extname(f).toLowerCase();
-          if (['.jpg', '.jpeg', '.png', '.gif'].includes(ext)) {
-            try { doc.image(f, x, y, { width: imageWidth }); } 
-            catch { doc.text(`Could not load image: ${f}`, x, y); }
-          } else {
-            doc.text(`Attached File: ${path.basename(f)}`, x, y);
-          }
-
-          x += imageWidth + padding;
-          if ((index + 1) % imagesPerRow === 0) {
-            x = doc.page.margins.left;
-            y += 120;
-          }
-        });
-
-        doc.y = y + 120;
-      } else {
-        doc.text('No files attached.');
+    Object.keys(dynamic_check).forEach(key => {
+      if (dynamic_check[key].length) {
+        doc.font('Helvetica-Bold').text(`Equipment Files (${equipment}) - ${key}`, { width: pageWidth, align: 'left' });
+        dynamic_check[key].forEach(f => doc.text(`Attached File: ${path.basename(f)}`));
+        doc.moveDown();
       }
-
-      doc.moveDown();
     });
 
-    // ----------------- REMARKS & EVALUATION -----------------
-    doc.moveDown();
     doc.font('Helvetica-Bold').text('Remarks:', { width: pageWidth, align: 'left' });
     doc.font('Helvetica').text(remarks || 'N/A', { width: pageWidth, align: 'left' });
-    doc.moveDown();
-
-    const y = doc.y;
-    doc.text(`Evaluated by: ${evaluated_by || 'N/A'}`, { align: 'left' });
-    doc.text(`Date of Evaluation: ${evaluation_date || 'N/A'}`, doc.page.margins.left, y, { align: 'right' });
 
     doc.end();
 

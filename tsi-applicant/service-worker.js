@@ -3,7 +3,7 @@
    Safe caching (NO 206 errors)
 ========================================================= */
 
-const CACHE_NAME = "tsi-cache-v7"; // ⬅ incremented version
+const CACHE_NAME = "tsi-cache-v10"; // ⬅ incremented version
 
 const STATIC_ASSETS = [
   "/tsi-applicant/manifest.json",

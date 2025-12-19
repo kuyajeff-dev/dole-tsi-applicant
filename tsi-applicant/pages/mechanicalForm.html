@@ -111,7 +111,7 @@
     <div class="space-y-3">
       <div class="flex items-center gap-4">
         <label class="font-semibold w-56">Applicant Establishment:</label>
-        <input type="text" id="applicant_establishment" class="border-b flex-1 outline-none" readonly>
+        <input type="text" id="applicant_establishment" name="applicant_establishment" class="border-b flex-1 outline-none" readonly>
       </div>
       <div class="flex items-center gap-4">
         <label class="font-semibold w-56">Location of Equipment:</label>
@@ -225,13 +225,13 @@
           <input type="file" id="fileItem6" name="file_item6" multiple class="mt-1 block w-full border rounded px-2 py-1 hidden">
           <div id="preview_fileItem6" class="flex flex-wrap gap-2 mt-2"></div>
         </div>
-        <div class="flex flex-col gap-2">
+        <div id="foundationItem7" class="flex flex-col gap-2 hidden">
           <label class="flex items-center gap-2">
-            <input type="checkbox" name="check_item7" class="form-checkbox checklist-checkbox" data-file="fileItem7">
-            Foundation design calculation with minimum factor of safety of 5 (Boiler, Pressure Vessel, Turbine, ICE)
+            <input type="checkbox" id="foundationCheckbox" class="form-checkbox checklist-checkbox" data-file="foundationFile">
+            Foundation design calculation with minimum factor of safety of 5
           </label>
-          <input type="file" id="fileItem7" name="file_item7" multiple class="mt-1 block w-full border rounded px-2 py-1 hidden">
-          <div id="preview_fileItem7" class="flex flex-wrap gap-2 mt-2"></div>
+          <input type="file" id="foundationFile" name="file_item7" multiple class="mt-1 block w-full border rounded px-2 py-1 hidden">
+          <div id="preview_foundationFile" class="flex flex-wrap gap-2 mt-2"></div>
         </div>
         <div class="flex flex-col gap-2">
           <label class="flex items-center gap-2">

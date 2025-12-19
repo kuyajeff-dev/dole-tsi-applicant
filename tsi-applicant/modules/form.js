@@ -36,7 +36,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (applicantInput) applicantInput.value = 'N/A';
   }
 
-
   // ----------------- MOBILE NAVBAR TOGGLE -----------------
   const mobileMenuButton = document.getElementById('mobileMenuButton');
   const mobileMenu = document.getElementById('mobileMenu');
@@ -100,69 +99,128 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupFilePreview(input, previewContainer);
   }
 
-  // ----------------- DYNAMIC EQUIPMENT CHECKLIST -----------------
+  // ----------------- DYNAMIC EQUIPMENT CHECKLIST + FOUNDATION -----------------
   const equipmentCheckboxes = document.querySelectorAll('.equipment-checkbox');
   const equipmentContainer = document.getElementById('equipmentChecklistContainer');
 
-  function rebuildEquipmentChecklist() {
-    equipmentContainer.innerHTML = '';
-    let checklist2Counter = 1;
-    let checklist3Counter = 1;
+  const foundationItem7 = document.getElementById('foundationItem7');
+  const foundationCheckbox = document.getElementById('foundationCheckbox');
+  const foundationFile = document.getElementById('foundationFile');
+  const foundationPreview = document.getElementById('preview_foundationFile');
 
-    equipmentCheckboxes.forEach(cb => {
-      const wrapper = cb.closest('div');
-      const countInput = wrapper.querySelector('.equipment-count');
-      const count = parseInt(countInput.value);
-      if (!cb.checked || !count || count < 1) return;
+  const foundationEquipments = [
+    'Boiler',
+    'Pressure vessel',
+    'Steam/gas/hydro/wind turbine',
+    'Internal combustion engine'
+  ];
 
-      const equipmentName = cb.value;
-      for (let i = 1; i <= count; i++) {
-        // -------- Checklist 2 Dynamic --------
-        const item2 = document.createElement('div');
-        item2.className = 'flex flex-col gap-1';
-        const input2Name = `equipment_item2_${equipmentName}_${i}`;
-        const preview2Id = `preview_${input2Name}`;
-        item2.innerHTML = `
-          <label class="flex items-center gap-2 text-sm font-semibold">
-            2.${checklist2Counter} ${equipmentName} #${i} – Three (3) sets of duly accomplished Application Forms
-          </label>
-          <input type="file" name="${input2Name}" multiple class="border rounded px-2 py-1" />
-          <div id="${preview2Id}" class="flex flex-wrap gap-2 mt-2"></div>
-        `;
-        equipmentContainer.appendChild(item2);
-        setupFilePreview(item2.querySelector('input[type="file"]'), document.getElementById(preview2Id));
-        checklist2Counter++;
+  setupFilePreview(foundationFile, foundationPreview);
 
-        // -------- Checklist 3 Dynamic --------
-        const item3 = document.createElement('div');
-        item3.className = 'flex flex-col gap-1 mt-2';
-        const input3Name = `equipment_item3_${equipmentName}_${i}`;
-        const preview3Id = `preview_${input3Name}`;
-        item3.innerHTML = `
-          <label class="flex items-center gap-2 text-sm font-semibold">
-            3.${checklist3Counter} ${equipmentName} #${i} – Three (3) sets of Plans / Drawings
-          </label>
-          <input type="file" name="${input3Name}" multiple class="border rounded px-2 py-1" />
-          <div id="${preview3Id}" class="flex flex-wrap gap-2 mt-2"></div>
-        `;
-        equipmentContainer.appendChild(item3);
-        setupFilePreview(item3.querySelector('input[type="file"]'), document.getElementById(preview3Id));
-        checklist3Counter++;
+  function toggleFoundationItem7() {
+    if (!foundationItem7 || !foundationCheckbox || !foundationFile || !foundationPreview) return;
+
+    const show = Array.from(equipmentCheckboxes).some(cb => cb.checked && foundationEquipments.includes(cb.value.trim()));
+
+    if (show) {
+      foundationItem7.classList.remove('hidden');
+    } else {
+      foundationItem7.classList.add('hidden');
+      foundationCheckbox.checked = false;
+      foundationFile.value = '';
+      foundationFile.classList.add('hidden');
+      foundationPreview.innerHTML = '';
+    }
+  }
+
+  if (foundationCheckbox && foundationFile && foundationPreview) {
+    foundationCheckbox.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        foundationFile.classList.remove('hidden');
+      } else {
+        foundationFile.classList.add('hidden');
+        foundationFile.value = '';
+        foundationPreview.innerHTML = '';
       }
     });
   }
 
+  function rebuildEquipmentChecklist() {
+    if (!equipmentContainer) return;
+    equipmentContainer.innerHTML = '';
+
+    equipmentCheckboxes.forEach(cb => {
+      const wrapper = cb.closest('div');
+      if (!wrapper) return;
+
+      const countInput = wrapper.querySelector('.equipment-count');
+      const count = parseInt(countInput?.value, 10);
+
+      if (!cb.checked || !count || count <= 1) return;
+
+      const equipmentName = cb.value.trim();
+      for (let i = 1; i <= count - 1; i++) {
+        createChecklistItem(equipmentName, i + 1);
+      }
+    });
+  }
+
+  function createChecklistItem(equipmentName, index = null) {
+    if (!equipmentContainer) return;
+    const suffix = index ? ` #${index}` : '';
+
+    const input2Name = `equipment_item2_${equipmentName}${index ? '_' + index : ''}`;
+    const preview2Id = `preview_${input2Name}`;
+    const item2 = document.createElement('div');
+    item2.className = 'flex flex-col gap-1';
+    item2.innerHTML = `
+      <label class="text-sm font-semibold">
+        ${equipmentName}${suffix} – Three (3) sets of duly accomplished Application Forms per equipment, signed/sealed by PME and signed by Owner/Manager
+      </label>
+      <input type="file" name="${input2Name}" multiple class="border rounded px-2 py-1" />
+      <div id="${preview2Id}" class="flex flex-wrap gap-2 mt-2"></div>
+    `;
+    equipmentContainer.appendChild(item2);
+    setupFilePreview(item2.querySelector('input'), document.getElementById(preview2Id));
+
+    const input3Name = `equipment_item3_${equipmentName}${index ? '_' + index : ''}`;
+    const preview3Id = `preview_${input3Name}`;
+    const item3 = document.createElement('div');
+    item3.className = 'flex flex-col gap-1 mt-2';
+    item3.innerHTML = `
+      <label class="text-sm font-semibold">
+        ${equipmentName}${suffix} – Three (3) sets of Plans/drawings incorporated in the Application Form (A3 size acceptable if legible)
+      </label>
+      <input type="file" name="${input3Name}" multiple class="border rounded px-2 py-1" />
+      <div id="${preview3Id}" class="flex flex-wrap gap-2 mt-2"></div>
+    `;
+    equipmentContainer.appendChild(item3);
+    setupFilePreview(item3.querySelector('input'), document.getElementById(preview3Id));
+  }
+
   equipmentCheckboxes.forEach(cb => {
     const wrapper = cb.closest('div');
-    const countInput = wrapper.querySelector('.equipment-count');
+    const countInput = wrapper?.querySelector('.equipment-count');
 
     cb.addEventListener('change', () => {
-      if (cb.checked) { countInput.classList.remove('hidden'); countInput.focus(); }
-      else { countInput.classList.add('hidden'); countInput.value = ''; rebuildEquipmentChecklist(); }
+      if (countInput) {
+        if (cb.checked) {
+          countInput.classList.remove('hidden');
+          countInput.focus();
+        } else {
+          countInput.classList.add('hidden');
+          countInput.value = '';
+        }
+      }
+
+      toggleFoundationItem7();
+      rebuildEquipmentChecklist();
     });
 
-    countInput.addEventListener('input', rebuildEquipmentChecklist);
+    countInput?.addEventListener('input', rebuildEquipmentChecklist);
   });
+
+  toggleFoundationItem7();
 
   // ----------------- FORM SUBMISSION -----------------
   const form = document.getElementById("checklistForm");
@@ -174,34 +232,40 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
-      Swal.fire({ title: "Submitting...", text: "Please wait while we generate your PDF checklist.", allowOutsideClick: false, allowEscapeKey: false, didOpen: () => Swal.showLoading() });
+      Swal.fire({
+        title: "Submitting...",
+        text: "Please wait while we generate your PDF checklist.",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => Swal.showLoading()
+      });
 
       try {
         const formData = new FormData(form);
         formData.append('user_id', currentUser.id);
 
-        // ----------------- COLLECT EQUIPMENT NUMBERS -----------------
-        const equipmentNos = {};
-        equipmentCheckboxes.forEach(cb => {
-          const wrapper = cb.closest('div');
-          const countInput = wrapper.querySelector('.equipment-count');
-          if (cb.checked && countInput && countInput.value) {
-            equipmentNos[cb.value] = parseInt(countInput.value);
-          }
-        });
-        formData.append('equipment_no', JSON.stringify(equipmentNos));
+        // ----------------- SINGLE EQUIPMENT -----------------
+        const equipmentCheckbox = document.querySelector('.equipment-checkbox:checked');
+        if (!equipmentCheckbox) throw new Error("Please select one equipment type.");
+        const equipmentName = equipmentCheckbox.value.trim();
+        const totalUnitsInput = equipmentCheckbox.closest('div')?.querySelector('.equipment-count');
+        const totalUnits = totalUnitsInput?.value || 1;
 
-        // Append static checklist 1–12 files
+        formData.append('equipment', equipmentName);          // string, single equipment
+        formData.append('equipment_no', totalUnits);         // number of units
+
+        // ----------------- APPEND STATIC FILES 1–12 -----------------
         for (let i = 1; i <= 12; i++) {
           const input = document.getElementById(`fileItem${i}`);
           if (input && input.files.length > 0) Array.from(input.files).forEach(file => formData.append(`file_item${i}`, file));
         }
 
-        // Append dynamic checklist files
+        // ----------------- APPEND DYNAMIC FILES FOR SINGLE EQUIPMENT -----------------
         document.querySelectorAll('#equipmentChecklistContainer input[type="file"]').forEach(input => {
           Array.from(input.files).forEach(file => formData.append(input.name, file));
         });
 
+        // ----------------- SEND REQUEST -----------------
         const response = await fetch("/submit-checklist", { method: "POST", body: formData });
         if (!response.ok) throw new Error("Server error while submitting checklist.");
 
@@ -214,7 +278,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.URL.revokeObjectURL(pdfUrl);
 
         Swal.close();
-        Swal.fire({ icon: "success", title: "Checklist Submitted!", text: "Your PDF has been downloaded successfully.", timer: 1500, showConfirmButton: false }).then(() => {
+        Swal.fire({
+          icon: "success",
+          title: "Checklist Submitted!",
+          text: "Your PDF has been downloaded successfully.",
+          timer: 1500,
+          showConfirmButton: false
+        }).then(() => {
           form.reset();
           document.querySelectorAll('[id^="preview_"]').forEach(preview => preview.innerHTML = '');
           document.querySelectorAll('input[type="file"]').forEach(input => input.classList.add('hidden'));
